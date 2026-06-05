@@ -1,0 +1,51 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log"
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "moveit-v2-e8079",
+          "appId": "1:853397289334:android:114cfc3e48e64121786257",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "moveit-v2-e8079",
+          "configurations": {
+            "android": "1:853397289334:android:114cfc3e48e64121786257",
+            "ios": "1:853397289334:ios:ef95df50964c66c0786257",
+            "web": "1:853397289334:web:a7e127f9c0d67637786257"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "moveit-web/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

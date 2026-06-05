@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "853397289334",
+    "project_id": "moveit-v2-e8079",
+    "storage_bucket": "moveit-v2-e8079.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:853397289334:android:114cfc3e48e64121786257",
+        "android_client_info": {
+          "package_name": "com.example.moveit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFevEfWcze2xI3fZaixje41ABpQ0o4flo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

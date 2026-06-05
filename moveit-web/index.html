@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoveIt — Delivery Made Simple</title>
+  <meta name="description" content="MoveIt is Egypt's premier delivery platform. Book a delivery, track your package in real-time, and get it there fast." />
+  <meta name="theme-color" content="#0F1F91" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="MoveIt" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="MoveIt — Delivery Made Simple" />
+  <meta property="og:description" content="Egypt's premier delivery platform. Book, track, and deliver." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/moveit.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+
+  <!-- Google Fonts: Cairo (matching mobile app) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="/src/styles/index.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- SPA content rendered here -->
+    <div class="app-loader" id="app-loader">
+      <div class="app-loader__content">
+        <img src="/logo.png" alt="MoveIt" class="app-loader__logo" />
+        <div class="app-loader__spinner"></div>
+      </div>
+    </div>
+  </div>
+  <div id="toast-container" class="toast-container"></div>
+  <div id="modal-root"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

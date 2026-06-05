@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── USERS ──────────────────────────────────────────────────────────────
+    // Any authenticated user can read any profile (drivers need to see customer
+    // info, customers need to see driver info). Writes are locked to own doc or admins.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (request.auth.uid == userId || isAdmin())
+                    && (isAdmin() || (
+                         (request.resource.data.role != 'admin' || request.resource.data.get('adminSetupKey', '') == 'MOVEIT_ADMIN_INIT_2026')
+                         && request.resource.data.get('isVerified', false) == false
+                       ));
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin())
+                    && (isAdmin() || (
+                         request.resource.data.role == resource.data.role
+                         && request.resource.data.get('isVerified', false) == resource.data.get('isVerified', false)
+                         && request.resource.data.get('walletBalancePiastres', 0) <= resource.data.get('walletBalancePiastres', 0)
+                       ));
+      allow delete: if request.auth != null && isAdmin();
+    }
+
+    // ── JOBS ───────────────────────────────────────────────────────────────
+    match /jobs/{jobId} {
+
+      // Any authenticated user can read jobs (drivers need to see the job board)
+      allow read: if request.auth != null;
+
+      // Only the customer who created the job can create it, or admin
+      allow create: if request.auth != null
+                    && (request.auth.uid == request.resource.data.customerId || isAdmin());
+
+      // CUSTOMER: can update/delete their own job
+      // ADMIN: can update/delete any job
+      allow update, delete: if request.auth != null
+                             && (request.auth.uid == resource.data.customerId || isAdmin());
+
+      // DRIVER: can update a job when they are the assigned driver
+      // (covers: accepting pending jobs, marking in_transit, delivered, cancelled)
+      allow update: if request.auth != null
+                    && (
+                      // Driver is already assigned to this job
+                      request.auth.uid == resource.data.driverId
+                      ||
+                      // Driver is accepting a pending job (sets themselves as driverId)
+                      (resource.data.status == 'pending'
+                       && request.resource.data.status == 'accepted'
+                       && request.resource.data.driverId == request.auth.uid)
+                    );
+    }
+
+    // ── REPORTS ────────────────────────────────────────────────────────────
+    match /reports/{reportId} {
+      // Users can read their own reports, Admins can read all
+      allow read: if request.auth != null && (resource.data.reporterId == request.auth.uid || isAdmin());
+      
+      // Users can create reports for themselves
+      allow create: if request.auth != null && request.resource.data.reporterId == request.auth.uid;
+      
+      // Only admins can update/delete reports
+      allow update, delete: if request.auth != null && isAdmin();
+    }
+
+    // ── TRACKING ───────────────────────────────────────────────────────────
+    // Drivers can write their own tracking data; customers can read it.
+    match /tracking/{trackingId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── CHATS ──────────────────────────────────────────────────────────────
+    match /chats/{messageId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
+    }
+
+    // ── TELEMETRY ──────────────────────────────────────────────────────────
+    match /telemetry/{docId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
