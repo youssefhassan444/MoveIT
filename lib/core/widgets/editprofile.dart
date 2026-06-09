@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 
+/// A screen that allows users to edit their profile information.
+/// Currently supports viewing and editing the user's name, while the email is view-only.
 class EditProfilePage extends StatefulWidget {
+  /// The user model containing the initial profile data.
   final UserModel? user;
 
   const EditProfilePage({super.key, required this.user});
@@ -14,6 +17,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController nameController;
   late TextEditingController emailController;
 
+  // Custom colors for this page.
   static const darkBlue = Color(0xFF0F1F91);
   static const bg = Color(0xFFF4F7FC);
   static const accent = Color(0xFFFF8C42);
@@ -21,6 +25,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
+    // Initialize controllers with the current user data.
     nameController =
         TextEditingController(text: widget.user?.displayName ?? '');
     emailController =
@@ -134,6 +139,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   // ================= INPUT FIELD =================
+  
+  /// Helper method to create a stylized [TextField].
+  /// 
+  /// [controller] manages the text input.
+  /// [label] is the floating label.
+  /// [icon] is the prefix icon.
+  /// [enabled] determines if the field is editable (default is true).
   Widget _field({
     required TextEditingController controller,
     required String label,

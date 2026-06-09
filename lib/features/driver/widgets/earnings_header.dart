@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// Small earnings summary used on the Board screen.
+///
+/// It provides a quick overview of the driver's daily performance,
+/// showing their total earnings, distance driven, and time online.
 class EarningsHeader extends StatelessWidget {
+  /// The driver's total daily earnings, in piastres.
   final int earningsPiastres;
+  /// A string representing the total distance driven.
   final String distanceText;
+  /// A string representing the total time spent online.
   final String onlineText;
 
+  /// Creates an [EarningsHeader] widget.
   const EarningsHeader({
     super.key,
     required this.earningsPiastres,
@@ -16,6 +23,7 @@ class EarningsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Convert piastres to standard currency unit
     final earnings = (earningsPiastres / 100).toStringAsFixed(2);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -33,7 +41,7 @@ class EarningsHeader extends StatelessWidget {
               children: [
                 const Text('Today\'s Earnings', style: TextStyle(color: Colors.white70)),
                 const SizedBox(height: 8),
-                Text('$earnings', // placeholder currency formatting
+                Text(' $earnings', // placeholder currency formatting
                     style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),),
                 const SizedBox(height: 8),
                 Row(children: [
@@ -44,6 +52,7 @@ class EarningsHeader extends StatelessWidget {
               ],
             ),
           ),
+          // Mocked hardcoded stats for deliveries completed today
           const Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [

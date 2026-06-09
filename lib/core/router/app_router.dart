@@ -15,6 +15,8 @@ import '../../features/customer/post_job_screen.dart';
 
 import '../../features/shared/customer_profile_screen.dart';
 
+import '../../features/admin/dashboard_screen.dart';
+
 import '../../features/driver/driver_shell.dart';
 import '../../features/driver/job_board_screen.dart';
 import '../../features/driver/active_job_screen.dart';
@@ -24,8 +26,12 @@ import '../../features/driver/driver_job_detail_screen.dart';
 import '../../features/shared/driver_profile_screen.dart';
 import '../../features/shared/chat_screen.dart';
 
+/// Global navigator key to access the navigation state anywhere in the app.
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Riverpod provider for the GoRouter configuration.
+/// 
+/// This provider handles all application routing using [GoRouter].
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -49,15 +55,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SignupScreen(),
       ),
 
+      // ───────── ADMIN ─────────
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
+
       // ───────── SHARED ─────────
+      
+      // Shared chat screen for jobs.
       GoRoute(
         path: '/chat/:id',
         builder: (context, state) => ChatScreen(
-          jobId: state.pathParameters['id']!,
+          jobId: state.pathParameters['id']!, // Extract the job ID from the path.
         ),
       ),
 
       // ───────── CUSTOMER ─────────
+      
+      // Uses a ShellRoute to wrap customer screens with a bottom navigation bar.
       ShellRoute(
         builder: (context, state, child) => CustomerShell(child: child),
         routes: [
@@ -92,12 +108,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // Route for customers to post a new job outside the shell route.
       GoRoute(
         path: '/customer/post-job',
-        builder: (context, state) => const PostJobScreen(),
+        builder: (context, state) => PostJobScreen(
+          initialVehicleType: state.extra as String?, // Pass optional extra parameter.
+        ),
       ),
 
       // ───────── DRIVER ─────────
+      
+      // Uses a ShellRoute to wrap driver screens with a bottom navigation bar.
       ShellRoute(
         builder: (context, state, child) => DriverShell(child: child),
         routes: [

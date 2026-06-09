@@ -7,104 +7,119 @@ import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/errors/app_error.dart';
+import '../core/utils/logger.dart';
 
+/// Service responsible for managing all device location operations.
+/// 
+/// Handles permissions, acquiring GPS coordinates, reverse geocoding,
+/// and maintaining active real-time tracking streams for drivers and users.
 class LocationService {
   final Ref _ref;
+  
+  /// Creates a new [LocationService].
   LocationService(this._ref);
   StreamSubscription<Position>? _userTrackingSubscription;
   StreamSubscription<Position>? _jobTrackingSubscription;
 
   /// Requests location permissions. Returns true if granted.
   Future<Result<bool, AppError>> requestPermission() async {
-    debugPrint('📍 [LocationService:requestPermission] Check starting...');
+    appLogger.d('📍 [LocationService:requestPermission] Check starting...');
     
     // 1. Check current system permission status first
     var permission = await Geolocator.checkPermission();
-    debugPrint('📍 [LocationService:requestPermission] Current Permission State: $permission');
+    appLogger.d('📍 [LocationService:requestPermission] Current Permission State: $permission');
     
     if (permission == LocationPermission.denied) {
-      debugPrint('📍 [LocationService:requestPermission] Status denied. Presenting system permission dialog...');
+      appLogger.d('📍 [LocationService:requestPermission] Status denied. Presenting system permission dialog...');
       permission = await Geolocator.requestPermission();
-      debugPrint('📍 [LocationService:requestPermission] System dialog response: $permission');
+      appLogger.d('📍 [LocationService:requestPermission] System dialog response: $permission');
     }
 
     if (permission == LocationPermission.denied) {
-      debugPrint('📍 [LocationService:requestPermission] Failure: Location permission denied by user.');
+      appLogger.d('📍 [LocationService:requestPermission] Failure: Location permission denied by user.');
       return const Result.failure(LocationError('Location permission denied.'));
     }
 
     if (permission == LocationPermission.deniedForever) {
-      debugPrint('📍 [LocationService:requestPermission] Failure: Location permissions permanently denied.');
+      appLogger.d('📍 [LocationService:requestPermission] Failure: Location permissions permanently denied.');
       return const Result.failure(LocationError('Location permissions are permanently denied. Please enable them in settings.'));
     }
 
     // 2. Check if the system-wide location service (GPS) is enabled
     bool isServiceEnabled = await Geolocator.isLocationServiceEnabled();
-    debugPrint('📍 [LocationService:requestPermission] GPS Hardware Enabled: $isServiceEnabled');
+    appLogger.d('📍 [LocationService:requestPermission] GPS Hardware Enabled: $isServiceEnabled');
     if (!isServiceEnabled) {
-      debugPrint('📍 [LocationService:requestPermission] Failure: GPS_DISABLED');
+      appLogger.d('📍 [LocationService:requestPermission] Failure: GPS_DISABLED');
       return const Result.failure(LocationError('GPS_DISABLED'));
     }
 
-    debugPrint('📍 [LocationService:requestPermission] Success: Permission granted and GPS enabled.');
+    appLogger.d('📍 [LocationService:requestPermission] Success: Permission granted and GPS enabled.');
     return const Result.success(true);
   }
 
 
   /// Helper to open device location settings
   Future<void> openSettings() async {
-    debugPrint('📍 [LocationService:openSettings] Launching native Android location settings...');
+    appLogger.d('📍 [LocationService:openSettings] Launching native Android location settings...');
+    if (kIsWeb) {
+      appLogger.d('📍 [LocationService:openSettings] Not supported on Web.');
+      return;
+    }
     await Geolocator.openLocationSettings();
   }
 
   /// Gets the current position of the user.
   Future<Position?> getCurrentLocation() async {
-    debugPrint('📍 [LocationService:getCurrentLocation] Invoked. Checking permissions first...');
+    appLogger.d('📍 [LocationService:getCurrentLocation] Invoked. Checking permissions first...');
     final status = await Geolocator.checkPermission();
-    debugPrint('📍 [LocationService:getCurrentLocation] Permission status: $status');
+    appLogger.d('📍 [LocationService:getCurrentLocation] Permission status: $status');
     
     if (status != LocationPermission.whileInUse && status != LocationPermission.always) {
-      debugPrint('📍 [LocationService:getCurrentLocation] Access Denied: Returning null.');
+      appLogger.d('📍 [LocationService:getCurrentLocation] Access Denied: Returning null.');
       return null;
     }
 
-    try {
-      debugPrint('📍 [LocationService:getCurrentLocation] Attempt 1: Fetching last known position...');
-      final lastKnown = await Geolocator.getLastKnownPosition();
-      if (lastKnown != null) {
-        debugPrint('📍 [LocationService:getCurrentLocation] Attempt 1 Success! Found cached coordinate: (${lastKnown.latitude}, ${lastKnown.longitude})');
-        return lastKnown;
+    if (!kIsWeb) {
+      try {
+        appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 1: Fetching last known position...');
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) {
+          appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 1 Success! Found cached coordinate: (${lastKnown.latitude}, ${lastKnown.longitude})');
+          return lastKnown;
+        }
+        appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 1 result: Cached position was null. Proceeding to Attempt 2...');
+      } catch (e) {
+        appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 1 Exception: $e');
       }
-      debugPrint('📍 [LocationService:getCurrentLocation] Attempt 1 result: Cached position was null. Proceeding to Attempt 2...');
-    } catch (e) {
-      debugPrint('📍 [LocationService:getCurrentLocation] Attempt 1 Exception: $e');
+    } else {
+      appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 1 Skipped: getLastKnownPosition is not supported on Web.');
     }
 
     try {
-      debugPrint('📍 [LocationService:getCurrentLocation] Attempt 2: Requesting current position (Low Accuracy, 4s Timeout)...');
+      appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 2: Requesting current position (Low Accuracy, 4s Timeout)...');
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.low,
           timeLimit: Duration(seconds: 4),
         ),
       );
-      debugPrint('📍 [LocationService:getCurrentLocation] Attempt 2 Success! Coord: (${pos.latitude}, ${pos.longitude})');
+      appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 2 Success! Coord: (${pos.latitude}, ${pos.longitude})');
       return pos;
     } catch (e) {
-      debugPrint('📍 [LocationService:getCurrentLocation] Attempt 2 Exception (Timeout/Error): $e. Proceeding to Attempt 3...');
+      appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 2 Exception (Timeout/Error): $e. Proceeding to Attempt 3...');
       
       try {
-        debugPrint('📍 [LocationService:getCurrentLocation] Attempt 3: Requesting current position (Medium Accuracy, 4s Timeout)...');
+        appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 3: Requesting current position (Medium Accuracy, 4s Timeout)...');
         final pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.medium,
             timeLimit: Duration(seconds: 4),
           ),
         );
-        debugPrint('📍 [LocationService:getCurrentLocation] Attempt 3 Success! Coord: (${pos.latitude}, ${pos.longitude})');
+        appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 3 Success! Coord: (${pos.latitude}, ${pos.longitude})');
         return pos;
       } catch (err) {
-        debugPrint('📍 [LocationService:getCurrentLocation] Attempt 3 Exception (Final Failure): $err. Returning null.');
+        appLogger.d('📍 [LocationService:getCurrentLocation] Attempt 3 Exception (Final Failure): $err. Returning null.');
         return null;
       }
     }
@@ -112,27 +127,27 @@ class LocationService {
 
   /// Converts coordinates into a human-readable address.
   Future<String> reverseGeocode(double lat, double lng) async {
-    debugPrint('📍 [LocationService:reverseGeocode] Invoked for coordinates: ($lat, $lng)');
+    appLogger.d('📍 [LocationService:reverseGeocode] Invoked for coordinates: ($lat, $lng)');
     try {
       final placemarks = await placemarkFromCoordinates(lat, lng);
-      debugPrint('📍 [LocationService:reverseGeocode] Geocoding returned ${placemarks.length} results.');
+      appLogger.d('📍 [LocationService:reverseGeocode] Geocoding returned ${placemarks.length} results.');
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;
         final formattedAddress = '${p.street}, ${p.subLocality}, ${p.locality}';
-        debugPrint('📍 [LocationService:reverseGeocode] Success! Address: "$formattedAddress"');
+        appLogger.d('📍 [LocationService:reverseGeocode] Success! Address: "$formattedAddress"');
         return formattedAddress;
       }
-      debugPrint('📍 [LocationService:reverseGeocode] Empty results returned from placemark library.');
+      appLogger.d('📍 [LocationService:reverseGeocode] Empty results returned from placemark library.');
       return 'Unknown Location';
     } catch (e) {
-      debugPrint('📍 [LocationService:reverseGeocode] Exception during reverse geocoding: $e');
+      appLogger.d('📍 [LocationService:reverseGeocode] Exception during reverse geocoding: $e');
       return 'Unknown Location';
     }
   }
 
   /// Starts writing the driver's live location to tracking/{jobId}.
   void startTracking(String jobId) {
-    debugPrint('📍 [LocationService:startTracking] Starting location tracking stream for Job ID: $jobId');
+    appLogger.d('📍 [LocationService:startTracking] Starting location tracking stream for Job ID: $jobId');
     stopTrackingJob(); // Cancel any existing job tracking
     
     Position? lastPos;
@@ -177,24 +192,24 @@ class LocationService {
         
         lastPos = pos;
         
-        debugPrint('📍 [LocationService:startTracking] Stream coordinate update for Job $jobId: (${pos.latitude}, ${pos.longitude}), Heading: $heading');
+        appLogger.d('📍 [LocationService:startTracking] Stream coordinate update for Job $jobId: (${pos.latitude}, ${pos.longitude}), Heading: $heading');
         FirebaseFirestore.instance.collection('tracking').doc(jobId).set({
           'driverLatLng': GeoPoint(pos.latitude, pos.longitude),
           'updatedAt': FieldValue.serverTimestamp(),
           'heading': heading,
         }).then((_) {
-          debugPrint('📍 [LocationService:startTracking] Successfully updated tracking document in Firestore.');
+          appLogger.d('📍 [LocationService:startTracking] Successfully updated tracking document in Firestore.');
         }).catchError((e) {
-          debugPrint('📍 [LocationService:startTracking] Firestore write error: $e');
+          appLogger.d('📍 [LocationService:startTracking] Firestore write error: $e');
         });
       },
-      onError: (e) => debugPrint('📍 [LocationService:startTracking] Stream encountered error: $e'),
+      onError: (e) => appLogger.d('📍 [LocationService:startTracking] Stream encountered error: $e'),
     );
   }
 
   void stopTrackingJob() {
     if (_jobTrackingSubscription != null) {
-      debugPrint('📍 [LocationService:stopTrackingJob] Terminating active job tracking stream.');
+      appLogger.d('📍 [LocationService:stopTrackingJob] Terminating active job tracking stream.');
       _jobTrackingSubscription?.cancel();
       _jobTrackingSubscription = null;
     }
@@ -202,20 +217,20 @@ class LocationService {
 
   /// Starts writing any user's location (Driver or Customer) to their user profile.
   Future<void> trackUser(String uid) async {
-    debugPrint('📍 [LocationService:trackUser] Starting user tracking stream for UID: $uid');
+    appLogger.d('📍 [LocationService:trackUser] Starting user tracking stream for UID: $uid');
     stopTrackingUser(); // Cancel any existing user tracking
 
     final status = await Geolocator.checkPermission();
-    debugPrint('📍 [LocationService:trackUser] Check permissions: $status');
+    appLogger.d('📍 [LocationService:trackUser] Check permissions: $status');
     if (status != LocationPermission.whileInUse && status != LocationPermission.always) {
-      debugPrint('📍 [LocationService:trackUser] Skipped: Permission not granted ($status)');
+      appLogger.d('📍 [LocationService:trackUser] Skipped: Permission not granted ($status)');
       return;
     }
 
     bool isServiceEnabled = await Geolocator.isLocationServiceEnabled();
-    debugPrint('📍 [LocationService:trackUser] Check GPS state: $isServiceEnabled');
+    appLogger.d('📍 [LocationService:trackUser] Check GPS state: $isServiceEnabled');
     if (!isServiceEnabled) {
-      debugPrint('📍 [LocationService:trackUser] Skipped: GPS is disabled');
+      appLogger.d('📍 [LocationService:trackUser] Skipped: GPS is disabled');
       return;
     }
 
@@ -226,14 +241,14 @@ class LocationService {
       ),
     ).listen(
       (pos) {
-        debugPrint('📍 [LocationService:trackUser] Stream coordinate update for User $uid: (${pos.latitude}, ${pos.longitude})');
+        appLogger.d('📍 [LocationService:trackUser] Stream coordinate update for User $uid: (${pos.latitude}, ${pos.longitude})');
         FirebaseFirestore.instance.collection('users').doc(uid).update({
           'lastKnownLocation': GeoPoint(pos.latitude, pos.longitude),
           'lastSeen': FieldValue.serverTimestamp(),
         }).then((_) {
-          debugPrint('📍 [LocationService:trackUser] Successfully updated user profile in Firestore.');
+          appLogger.d('📍 [LocationService:trackUser] Successfully updated user profile in Firestore.');
         }).catchError((e) {
-          debugPrint('📍 [LocationService:trackUser] Firestore update error: $e');
+          appLogger.d('📍 [LocationService:trackUser] Firestore update error: $e');
           stopTrackingUser();
         });
 
@@ -241,16 +256,16 @@ class LocationService {
         reverseGeocode(pos.latitude, pos.longitude).then((address) {
           _ref.read(currentAddressProvider.notifier).setAddress(address);
         }).catchError((e) {
-          debugPrint('📍 [LocationService:trackUser] Address resolution error: $e');
+          appLogger.d('📍 [LocationService:trackUser] Address resolution error: $e');
         });
       },
-      onError: (e) => debugPrint('📍 [LocationService:trackUser] Stream encountered error: $e'),
+      onError: (e) => appLogger.d('📍 [LocationService:trackUser] Stream encountered error: $e'),
     );
   }
 
   void stopTrackingUser() {
     if (_userTrackingSubscription != null) {
-      debugPrint('📍 [LocationService:stopTrackingUser] Terminating active user profile stream.');
+      appLogger.d('📍 [LocationService:stopTrackingUser] Terminating active user profile stream.');
       _userTrackingSubscription?.cancel();
       _userTrackingSubscription = null;
     }
@@ -259,12 +274,13 @@ class LocationService {
 
 final locationServiceProvider = Provider((ref) => LocationService(ref));
 
+/// Notifier to track whether the user has permanently denied location permissions.
 class LocationPermissionDeniedNotifier extends Notifier<bool> {
   @override
   bool build() => false;
 
   void setDenied(bool value) {
-    debugPrint('📍 [LocationPermissionDeniedNotifier] State change: $value');
+    appLogger.d('📍 [LocationPermissionDeniedNotifier] State change: $value');
     state = value;
   }
 }
@@ -275,6 +291,9 @@ final locationPermissionDeniedProvider = NotifierProvider<LocationPermissionDeni
 
 enum LocationStatus { loading, enabled, disabled }
 
+/// Notifier that tracks the global state of the device's location services.
+/// 
+/// Handles manual overrides and system-level GPS toggle states.
 class LocationStatusNotifier extends Notifier<LocationStatus> {
   bool _manuallyDisabled = false;
 
@@ -282,7 +301,7 @@ class LocationStatusNotifier extends Notifier<LocationStatus> {
 
   @override
   LocationStatus build() {
-    debugPrint('📍 [LocationStatusNotifier] Building notifier state...');
+    appLogger.d('📍 [LocationStatusNotifier] Building notifier state...');
     _checkStatus();
     return LocationStatus.loading;
   }
@@ -295,7 +314,7 @@ class LocationStatusNotifier extends Notifier<LocationStatus> {
     try {
       final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
       final permission = await Geolocator.checkPermission();
-      debugPrint('📍 [LocationStatusNotifier:_checkStatus] GPS Enabled: $isServiceEnabled, Permission: $permission');
+      appLogger.d('📍 [LocationStatusNotifier:_checkStatus] GPS Enabled: $isServiceEnabled, Permission: $permission');
       if (isServiceEnabled &&
           (permission == LocationPermission.whileInUse ||
               permission == LocationPermission.always)) {
@@ -304,27 +323,27 @@ class LocationStatusNotifier extends Notifier<LocationStatus> {
         state = LocationStatus.disabled;
       }
     } catch (e) {
-      debugPrint('📍 [LocationStatusNotifier:_checkStatus] Exception encountered: $e. Defaulting status to disabled.');
+      appLogger.d('📍 [LocationStatusNotifier:_checkStatus] Exception encountered: $e. Defaulting status to disabled.');
       state = LocationStatus.disabled;
     }
-    debugPrint('📍 [LocationStatusNotifier:_checkStatus] Final determined state: $state');
+    appLogger.d('📍 [LocationStatusNotifier:_checkStatus] Final determined state: $state');
   }
 
   void toggleManualOff() {
-    debugPrint('📍 [LocationStatusNotifier] Toggled manual OFF override.');
+    appLogger.d('📍 [LocationStatusNotifier] Toggled manual OFF override.');
     _manuallyDisabled = true;
     state = LocationStatus.disabled;
     ref.read(locationServiceProvider).stopTrackingUser();
   }
 
   void toggleManualOn() {
-    debugPrint('📍 [LocationStatusNotifier] Toggled manual ON override.');
+    appLogger.d('📍 [LocationStatusNotifier] Toggled manual ON override.');
     _manuallyDisabled = false;
     _checkStatus();
   }
 
   void setStatus(LocationStatus status) {
-    debugPrint('📍 [LocationStatusNotifier:setStatus] State change requested: $status');
+    appLogger.d('📍 [LocationStatusNotifier:setStatus] State change requested: $status');
     state = status;
   }
 }
@@ -333,6 +352,10 @@ final locationStatusProvider = NotifierProvider<LocationStatusNotifier, Location
   () => LocationStatusNotifier(),
 );
 
+/// Notifier that stores the currently resolved human-readable address.
+/// 
+/// Persists the last known address to SharedPreferences to show it immediately
+/// on app startup before a new GPS fix is obtained.
 class CurrentAddressNotifier extends Notifier<String?> {
   @override
   String? build() {
@@ -346,10 +369,10 @@ class CurrentAddressNotifier extends Notifier<String?> {
       final lastKnown = prefs.getString('last_known_address');
       if (lastKnown != null && state == null) {
         state = lastKnown;
-        debugPrint('📍 [CurrentAddressNotifier] Loaded cached address: "$lastKnown"');
+        appLogger.d('📍 [CurrentAddressNotifier] Loaded cached address: "$lastKnown"');
       }
     } catch (e) {
-      debugPrint('📍 [CurrentAddressNotifier] Error loading cached address: $e');
+      appLogger.d('📍 [CurrentAddressNotifier] Error loading cached address: $e');
     }
   }
 
@@ -359,7 +382,7 @@ class CurrentAddressNotifier extends Notifier<String?> {
       SharedPreferences.getInstance().then((prefs) {
         prefs.setString('last_known_address', address);
       }).catchError((e) {
-        debugPrint('📍 [CurrentAddressNotifier] Error saving address to cache: $e');
+        appLogger.d('📍 [CurrentAddressNotifier] Error saving address to cache: $e');
       });
     }
   }
@@ -370,15 +393,15 @@ final currentAddressProvider = NotifierProvider<CurrentAddressNotifier, String?>
 );
 
 Future<void> fetchAndResolveCurrentAddress(WidgetRef ref) async {
-  debugPrint('📍 [AddressResolver] Fetching current coordinates for banner...');
+  appLogger.d('📍 [AddressResolver] Fetching current coordinates for banner...');
   final loc = ref.read(locationServiceProvider);
   final pos = await loc.getCurrentLocation();
   if (pos != null) {
-    debugPrint('📍 [AddressResolver] Coordinate retrieved: (${pos.latitude}, ${pos.longitude})');
+    appLogger.d('📍 [AddressResolver] Coordinate retrieved: (${pos.latitude}, ${pos.longitude})');
     final address = await loc.reverseGeocode(pos.latitude, pos.longitude);
-    debugPrint('📍 [AddressResolver] Resolved address for banner: "$address"');
+    appLogger.d('📍 [AddressResolver] Resolved address for banner: "$address"');
     ref.read(currentAddressProvider.notifier).setAddress(address);
   } else {
-    debugPrint('📍 [AddressResolver] Could not retrieve coordinates for banner.');
+    appLogger.d('📍 [AddressResolver] Could not retrieve coordinates for banner.');
   }
 }

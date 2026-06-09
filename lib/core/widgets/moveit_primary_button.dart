@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
+/// The standard primary action button used across the MoveIt application.
+/// Supports displaying a loading indicator when an action is in progress.
 class MoveItPrimaryButton extends StatelessWidget {
+  /// The text to display on the button.
   final String text;
+  
+  /// Callback triggered when the button is pressed.
   final VoidCallback? onPressed;
+  
+  /// Whether the button should show a loading spinner.
   final bool isLoading;
 
   const MoveItPrimaryButton({

@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 
+/// The standard app bar used across the MoveIt application.
+/// Provides a consistent branded title and styling.
 class MoveItAppBar extends ConsumerWidget implements PreferredSizeWidget {
+  /// Whether to show the default menu/actions.
   final bool showMenu;
+  
+  /// An optional custom title widget to override the default "MoveIt" text.
   final Widget? title;
+  
   const MoveItAppBar({super.key, this.showMenu = true, this.title});
 
   @override

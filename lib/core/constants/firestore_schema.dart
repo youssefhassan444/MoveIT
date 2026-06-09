@@ -1,3 +1,7 @@
+// Defines the expected Firestore schema and structure for the application.
+// This file does not contain executed Dart code, but serves as documentation
+// for the NoSQL schema and security rules used in Firebase.
+
 /*
 FIRESTORE SCHEMA DEFINITION
 
@@ -8,7 +12,8 @@ users/{uid}:
   - photoUrl: String?
   - createdAt: Timestamp
   - fcmToken: String?
-  - vehicleType: String? (drivers only: 'motorcycle' | 'sedan' | 'pickup' | 'van' | 'truck')
+  - vehicleType: String? (drivers only: 'motorcycle' | 'mini_truck' | 'truck' | 'heavy_truck' | 'refrigerated_truck')
+  - licensePlate: String? (drivers only)
   - totalEarningsPiastres: int (drivers only, default 0)
 
 jobs/{jobId}:

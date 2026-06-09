@@ -6,15 +6,22 @@ import '../../services/job_service.dart';
 import '../../models/job_model.dart';
 import 'widgets/customer_job_card.dart';
 
+/// A screen that displays the active jobs for a customer.
+///
+/// It combines actual jobs fetched from the backend with optimistic jobs
+/// that have been created locally but might not have been fully synchronized yet.
 class CustomerJobsScreen extends ConsumerWidget {
+  /// Creates a [CustomerJobsScreen].
   const CustomerJobsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch providers for active jobs, all jobs, and optimistic jobs.
     final activeJobsAsync = ref.watch(customerActiveJobsProvider);
     final allJobsAsync = ref.watch(customerJobsProvider);
     final optimisticAsync = ref.watch(optimisticJobsProvider);
 
+    // Resolve the optimistic jobs, defaulting to an empty list on loading or error.
     final optimistic = optimisticAsync.when(
       data: (jobs) => jobs,
       loading: () => const <JobModel>[],
@@ -25,17 +32,21 @@ class CustomerJobsScreen extends ConsumerWidget {
       backgroundColor: Colors.white,
       body: activeJobsAsync.when(
         data: (jobs) {
+          // Create a map of active jobs by ID for quick lookup.
           final byId = {for (var j in jobs) j.id: j};
 
+          // Find optimistic jobs that have now arrived from the backend.
           final arrived = optimistic
               .where((o) => byId.containsKey(o.id))
               .map((o) => o.id)
               .toList();
 
+          // Remove the arrived optimistic jobs from the local state.
           if (arrived.isNotEmpty) {
             Future.microtask(() => removeOptimisticJobsByIds(arrived));
           }
 
+          // Merge actual jobs and remaining optimistic jobs.
           final merged = <JobModel>[];
           merged.addAll(jobs);
 
@@ -76,8 +87,10 @@ class CustomerJobsScreen extends ConsumerWidget {
           );
         },
         loading: () {
+          // While loading active jobs, try to fallback to the `allJobs` provider.
           return allJobsAsync.maybeWhen(
             data: (allJobs) {
+              // Filter out jobs that are not in an active state.
               final fallback = allJobs
                   .where((j) => [
                 'pending',
@@ -92,10 +105,12 @@ class CustomerJobsScreen extends ConsumerWidget {
 
               merged.addAll(fallback);
 
+              // Include optimistic jobs that aren't in the fallback list.
               for (final o in optimistic) {
                 if (!byId.containsKey(o.id)) merged.add(o);
               }
 
+              // If there are merged jobs, display them sorted by creation time.
               if (merged.isNotEmpty) {
                 merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
                 return ListView.separated(
@@ -107,6 +122,7 @@ class CustomerJobsScreen extends ConsumerWidget {
                 );
               }
 
+              // Otherwise, show shimmering placeholders.
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: 5,

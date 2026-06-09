@@ -3,11 +3,20 @@ import 'package:intl/intl.dart';
 
 import '../../../models/job_model.dart';
 
+/// A card widget that displays a summary of a job for the driver.
+///
+/// Shows the job description, price, pickup and dropoff locations,
+/// creation time, and status. It optionally displays an action button
+/// if [onTap] is provided.
 class DriverJobCard extends StatelessWidget {
+  /// The job data to display.
   final JobModel job;
+  /// Callback triggered when the action button is pressed.
   final VoidCallback? onTap;
+  /// The text to display on the action button. Defaults to 'View Details'.
   final String? actionLabel;
 
+  /// Creates a [DriverJobCard].
   const DriverJobCard({
     super.key,
     required this.job,
@@ -200,9 +209,12 @@ class DriverJobCard extends StatelessWidget {
   }
 }
 
+/// A visual badge that displays the status of a job.
 class _StatusBadge extends StatelessWidget {
+  /// The current status string.
   final String status;
 
+  /// Creates a [_StatusBadge].
   const _StatusBadge({required this.status});
 
   @override

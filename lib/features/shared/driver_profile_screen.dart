@@ -3,7 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../services/auth_service.dart';
+import '../customer/walletscreen.dart';
+import '../../../core/widgets/my_notifications.dart';
+import '../../../core/widgets/settings.dart';
+import '../../../core/widgets/editprofile.dart';
 
+/// A screen displaying the profile for a logged-in driver.
+///
+/// This screen provides a high-level view of the driver's information,
+/// including their name, email, profile picture, vehicle details, and total earnings.
+/// It also provides navigation options to edit profile, view notifications,
+/// manage wallet, and settings.
 class DriverProfileScreen extends ConsumerWidget {
   const DriverProfileScreen({super.key});
 
@@ -28,8 +38,10 @@ class DriverProfileScreen extends ConsumerWidget {
         slivers: [
 
           // ================= HEADER =================
+          // A flexible header that shrinks as the user scrolls, displaying
+          // the driver's avatar, name, email, role badge, vehicle details, and earnings.
           SliverAppBar(
-            expandedHeight: 320,
+            expandedHeight: 360,
             pinned: true,
             backgroundColor: darkBlue,
             flexibleSpace: FlexibleSpaceBar(
@@ -90,29 +102,84 @@ class DriverProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
 
                       // DRIVER BADGE
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 6,),
-                        decoration: BoxDecoration(
-                          color: accentOrange,
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 6,),
+                            decoration: BoxDecoration(
+                              color: accentOrange,
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: const Text(
-                          'DRIVER',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            letterSpacing: 1.2,
+                            child: const Text(
+                              'DRIVER',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // VEHICLE BADGES
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: accentOrange,
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 5)),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.local_shipping, color: Colors.white, size: 14),
+                                const SizedBox(width: 6),
+                                Text(
+                                  user.vehicleType ?? 'No vehicle',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: accentOrange,
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 5)),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.pin, color: Colors.white, size: 14),
+                                const SizedBox(width: 6),
+                                Text(
+                                  user.licensePlate ?? 'No plate',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 16),
@@ -150,6 +217,7 @@ class DriverProfileScreen extends ConsumerWidget {
           ),
 
           // ================= BODY =================
+          // A scrollable list of profile options and actions.
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(18),
@@ -157,23 +225,66 @@ class DriverProfileScreen extends ConsumerWidget {
                 children: [
 
                   _tile(
-                    icon: Icons.local_shipping_outlined,
-                    title: 'Vehicle Type',
-                    subtitle: user.vehicleType ?? 'Not set',
+                    icon: Icons.edit_outlined,
+                    title: 'Edit Profile',
+                    subtitle: 'Update your personal information',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditProfilePage(user: user),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _tile(
+                    icon: Icons.notifications_none,
+                    title: 'Notifications',
+                    subtitle: 'View your alerts & updates',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MyNotificationsPage(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _tile(
+                    icon: Icons.account_balance_wallet_outlined,
+                    title: 'Wallet',
+                    subtitle: 'Payments & balance',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WalletScreen(),
+                        ),
+                      );
+                    },
                   ),
 
                   _tile(
                     icon: Icons.bar_chart,
                     title: 'Performance',
                     subtitle: 'View your stats & delivery history',
-                    onTap: () {},
+                    onTap: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon'))); },
                   ),
 
                   _tile(
                     icon: Icons.settings_outlined,
                     title: 'Settings',
                     subtitle: 'App preferences',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsPage(),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 20),
@@ -189,6 +300,7 @@ class DriverProfileScreen extends ConsumerWidget {
   }
 
   // ================= TILE =================
+  /// A helper method to create a consistent list tile for profile options.
   Widget _tile({
     required IconData icon,
     required String title,
@@ -243,6 +355,7 @@ class DriverProfileScreen extends ConsumerWidget {
   }
 
   // ================= LOGOUT =================
+  /// A helper method to build the logout button.
   Widget _logout(WidgetRef ref, BuildContext context) {
     return Container(
       width: double.infinity,

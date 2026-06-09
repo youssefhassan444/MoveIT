@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 
+/// A horizontal list of filter chips used on the driver's job board.
+///
+/// Allows the driver to filter available jobs based on different criteria
+/// like proximity, pay, or urgency.
 class JobBoardFilters extends StatelessWidget {
+  /// The currently selected filter string.
   final String selected;
+  /// Callback triggered when a new filter is selected.
   final ValueChanged<String> onSelected;
 
+  /// Creates a [JobBoardFilters] widget.
   const JobBoardFilters({
     super.key,
     required this.selected,
     required this.onSelected,
   });
 
+  // Pre-defined list of filter options
   static const _filters = [
     'All',
     'Nearby',

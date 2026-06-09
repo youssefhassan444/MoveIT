@@ -4,9 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/moveit_app_bar.dart';
 
+/// A wrapper widget that provides the common layout for driver-facing screens.
+/// 
+/// It includes the [MoveItAppBar] and a [BottomNavigationBar] that remains
+/// persistent across the driver dashboard, active jobs, history, and profile.
 class DriverShell extends ConsumerWidget {
+  /// The main content to display within this shell.
   final Widget child;
 
+  /// Creates a [DriverShell] to wrap driver screens.
   const DriverShell({
     super.key,
     required this.child,
@@ -14,15 +20,18 @@ class DriverShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Determine the current route location from GoRouter
     final location = GoRouterState.of(context).uri.path;
 
+    // Helper function to map the current path to the corresponding nav bar index
     int getCurrentIndex() {
       if (location.startsWith('/driver/active')) return 1;
       if (location.startsWith('/driver/history')) return 2;
       if (location.startsWith('/driver/profile')) return 3;
-      return 0;
+      return 0; // Default to the job board
     }
 
+    // Helper function to determine the appropriate AppBar title based on path
     String getTitle() {
       if (location.startsWith('/driver/active')) {
         return 'Active Delivery';
@@ -36,11 +45,12 @@ class DriverShell extends ConsumerWidget {
         return 'Account Profile';
       }
 
-      return '';
+      return ''; // Default empty title for the main board
     }
 
     final title = getTitle();
 
+    // The primary dark color used for the navigation bar
     const darkNav = Color(0xFF0F1F91);
 
     return Scaffold(
@@ -48,6 +58,7 @@ class DriverShell extends ConsumerWidget {
         title: title.isEmpty ? null : Text(title),
       ),
 
+      // Inject the nested route child as the body
       body: child,
 
       bottomNavigationBar: Container(
@@ -76,6 +87,7 @@ class DriverShell extends ConsumerWidget {
           showUnselectedLabels: true,
           elevation: 0,
 
+          // Handle navigation when a bottom bar item is tapped
           onTap: (index) {
             switch (index) {
               case 0:

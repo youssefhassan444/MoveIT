@@ -2,27 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../models/job_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/job_service.dart';
+import '../../services/location_service.dart';
 
 import 'widgets/job_board_filters.dart';
 import 'widgets/job_board_item.dart';
 import '../../core/widgets/location_address_banner.dart';
 
+/// The main dashboard for drivers to view and accept available jobs.
+///
+/// It displays today's earnings and distance, a list of pending jobs,
+/// and allows the driver to filter and accept new deliveries.
 class JobBoardScreen extends HookConsumerWidget {
+  /// Creates a [JobBoardScreen].
   const JobBoardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch relevant providers for jobs, authentication, and driver history
     final jobsAsync = ref.watch(pendingJobsProvider);
     final optimisticAsync = ref.watch(optimisticJobsProvider);
     final authState = ref.watch(authStateChangesProvider);
+    final historyAsync = ref.watch(driverHistoryProvider);
 
+    // Local state for tracking which job is currently being accepted
     final acceptingJobId = useState<String?>(null);
+    
+    // Local state for the selected filter option
     final selectedFilter = useState<String>('All');
 
+    // Calculate today's earnings and distance from the driver's history
+    int todayEarnings = 0;
+    double todayDistanceKm = 0.0;
+    final now = DateTime.now();
+
+    if (historyAsync.value != null) {
+      for (final job in historyAsync.value!) {
+        // Only consider delivered jobs with a valid delivery timestamp
+        if (job.status == 'delivered' && job.deliveredAt != null) {
+          if (job.deliveredAt!.year == now.year &&
+              job.deliveredAt!.month == now.month &&
+              job.deliveredAt!.day == now.day) {
+            todayEarnings += job.netEarningsPiastres;
+            
+            final distanceMeters = const Distance().as(
+              LengthUnit.Meter,
+              job.pickupLatLng2,
+              job.dropoffLatLng2,
+            );
+            todayDistanceKm += (distanceMeters / 1000);
+          }
+        }
+      }
+    }
+
+    final earningsString = (todayEarnings / 100).toStringAsFixed(2);
+    final distanceString = '${(todayDistanceKm * 0.621371).toStringAsFixed(1)} mi';
+
+    // Request location permissions when the screen is first built
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final locService = ref.read(locationServiceProvider);
+        await locService.requestPermission();
+      });
+      return null;
+    }, const [],);
+
+    // Handle the job acceptance flow
     Future<void> handleAcceptJob(JobModel job) async {
       if (acceptingJobId.value != null) return;
 
@@ -90,6 +140,7 @@ class JobBoardScreen extends HookConsumerWidget {
                 error: (e, __) => Center(child: Text('Error: $e')),
 
                 data: (jobs) {
+                  // Merge optimistic jobs (local state) with server data
                   final optimistic = optimisticAsync.asData?.value ?? [];
 
                   final Map<String, JobModel> byId = {};
@@ -102,9 +153,11 @@ class JobBoardScreen extends HookConsumerWidget {
                     byId.putIfAbsent(j.id, () => j);
                   }
 
+                  // Sort merged jobs by creation time (newest first)
                   final merged = byId.values.toList()
                     ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+                  // Apply current filter selection
                   final filtered = selectedFilter.value == 'All'
                       ? merged
                       : merged.where((_) => true).toList();
@@ -164,9 +217,9 @@ class JobBoardScreen extends HookConsumerWidget {
 
                         /// AMOUNT WITH ORANGE SYMBOL
                         RichText(
-                          text: const TextSpan(
+                          text: TextSpan(
                             children: [
-                              TextSpan(
+                              const TextSpan(
                                 text: 'EGP ',
                                 style: TextStyle(
                                   color: Colors.white,
@@ -175,8 +228,8 @@ class JobBoardScreen extends HookConsumerWidget {
                                 ),
                               ),
                               TextSpan(
-                                text: '247.50',
-                                style: TextStyle(
+                                text: earningsString,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -194,21 +247,9 @@ class JobBoardScreen extends HookConsumerWidget {
                               child: _smallInfoBox(
                                 icon: Icons.route,
                                 title: 'Distance',
-                                value: '68.4 mi',
+                                value: distanceString,
                                 color: const Color(0xFFE0F2FE),
                                 textColor: orange, // 🔥 orange accent
-                              ),
-                            ),
-
-                            const SizedBox(width: 10),
-
-                            Expanded(
-                              child: _smallInfoBox(
-                                icon: Icons.access_time,
-                                title: 'Online',
-                                value: '5h 20m',
-                                color: const Color(0xFFDBEAFE),
-                                textColor: blue,
                               ),
                             ),
                           ],

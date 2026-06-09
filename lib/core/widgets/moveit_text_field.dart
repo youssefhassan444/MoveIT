@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
+/// A standard text input field used throughout the MoveIt application.
+/// Wraps [TextFormField] with common styling and behavior.
 class MoveItTextField extends StatelessWidget {
   final String label;
   final TextEditingController? controller;

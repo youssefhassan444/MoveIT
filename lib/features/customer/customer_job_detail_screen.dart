@@ -12,27 +12,46 @@ import '../../services/routing_service.dart';
 import '../../services/tracking_service.dart';
 import '../shared/report_dialog.dart';
 
+/// A screen that displays the details of a specific job for the customer.
+///
+/// It fetches the job details, shows the pickup and dropoff locations on a map,
+/// traces the route between them, tracks the driver's location (if assigned),
+/// and displays a bottom sheet with job status and driver information.
 class CustomerJobDetailScreen extends HookConsumerWidget {
+  /// The unique identifier of the job to display.
   final String jobId;
+
+  /// Creates a [CustomerJobDetailScreen].
   const CustomerJobDetailScreen({super.key, required this.jobId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the job data asynchronously.
     final jobAsync = ref.watch(singleJobProvider(jobId));
     final job = jobAsync.asData?.value;
+    
+    // Watch the tracking data if a job is loaded.
     final trackingProv = trackingProvider(job?.id ?? '');
     final trackingAsync = ref.watch(trackingProv);
+    
+    // Watch the driver data if a driver is assigned.
     final driverAsync = job != null && job.driverId != null
         ? ref.watch(userByIdProvider(job.driverId!))
         : const AsyncValue.data(null);
 
+    // State variables for route info, errors, and loading state.
     final routeInfo = useState<RouteInfo?>(null);
     final routeError = useState<String?>(null);
     final isRouteLoading = useState<bool>(false);
+    
+    // Controller for the map.
     final mapController = useMemoized(() => MapController());
     final mapReady = useState<bool>(false);
+    
+    // Controller for the draggable bottom sheet.
     final sheetController = useMemoized(() => DraggableScrollableController());
 
+    // Effect to fetch the route info between pickup and dropoff locations.
     useEffect(() {
       if (job == null) {
         routeInfo.value = null;
@@ -259,20 +278,18 @@ class CustomerJobDetailScreen extends HookConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              child: Text(job.itemDescription,
-                                  style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,),),
+                              child: Text(job.itemDescription, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                             ),
                             Chip(
-                              label: Text(statusLabel,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,),),
+                              label: Text(statusLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                               backgroundColor: AppTheme.brandSkyBlue,
                             ),
                           ],
                         ),
+                        if (job.itemWeightKg != null) ...[
+                          const SizedBox(height: 8),
+                          Text('Weight: ${job.itemWeightKg} kg', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ],
                         const SizedBox(height: 16),
                         Row(children: [
                           const Icon(Icons.location_on,
@@ -301,26 +318,15 @@ class CustomerJobDetailScreen extends HookConsumerWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Distance',
-                                    style: TextStyle(
-                                        color: Colors.grey, fontSize: 12,),),
+                                const Text('Distance', style: TextStyle(color: Colors.black87, fontSize: 12)),
                                 const SizedBox(height: 4),
-                                Text(
-                                    distanceMiles > 0
-                                        ? '${distanceMiles.toStringAsFixed(1)} mi'
-                                        : (isRouteLoading.value
-                                            ? 'Loading...'
-                                            : 'Unavailable'),
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,),),
+                                Text(distanceMiles > 0 ? '${distanceMiles.toStringAsFixed(1)} mi' : (isRouteLoading.value ? 'Loading...' : 'Unavailable'), style: const TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('ETA',
-                                    style: TextStyle(
-                                        color: Colors.grey, fontSize: 12,),),
+                                const Text('ETA', style: TextStyle(color: Colors.black87, fontSize: 12)),
                                 const SizedBox(height: 4),
                                 Text(
                                     etaMinutes > 0
@@ -437,12 +443,23 @@ class CustomerJobDetailScreen extends HookConsumerWidget {
   }
 }
 
+/// A widget representing a single step in the job status timeline.
 class _StatusStep extends StatelessWidget {
+  /// The label for this step (e.g., 'Order', 'Pickup').
   final String label;
+
+  /// Whether this step is currently active or in progress.
   final bool active;
+
+  /// Whether this step has been completed.
   final bool done;
-  const _StatusStep(
-      {required this.label, required this.active, required this.done,});
+
+  /// Creates a [_StatusStep].
+  const _StatusStep({
+    required this.label,
+    required this.active,
+    required this.done,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -463,11 +480,7 @@ class _StatusStep extends StatelessWidget {
               : null,
         ),
         const SizedBox(height: 4),
-        Text(label,
-            style: TextStyle(
-                fontSize: 10,
-                color: active ? AppTheme.brandNavy : Colors.grey,
-                fontWeight: active ? FontWeight.bold : FontWeight.normal,),),
+        Text(label, style: TextStyle(fontSize: 10, color: active ? AppTheme.brandNavy : Colors.black87, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
       ],
     );
   }

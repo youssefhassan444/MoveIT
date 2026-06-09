@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+/// A loading placeholder for a job card, utilizing a shimmer effect.
+/// Used while fetching or loading job data to show a skeleton layout.
 class JobCardShimmer extends StatelessWidget {
   const JobCardShimmer({super.key});
 

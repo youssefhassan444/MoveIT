@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../core/widgets/location_address_banner.dart';
@@ -157,27 +156,37 @@ class _HomePageState extends ConsumerState<HomePage> {
                   _drawerItem(
                     icon: Icons.history,
                     title: 'Request History',
-                    onTap: () {},
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                    },
                   ),
                   _drawerItem(
                     icon: Icons.notifications,
                     title: 'Notifications',
-                    onTap: () {},
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                    },
                   ),
                   _drawerItem(
                     icon: Icons.settings,
                     title: 'Settings',
-                    onTap: () {},
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                    },
                   ),
                   _drawerItem(
                     icon: Icons.security,
                     title: 'Safety',
-                    onTap: () {},
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                    },
                   ),
                   _drawerItem(
                     icon: Icons.help_outline,
                     title: 'Help',
-                    onTap: () {},
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                    },
                   ),
                 ],
               ),
@@ -322,27 +331,32 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
                           buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/nos.jpeg',
-                            label: 'TruckSend',
+                            label: 'Truck',
+                            vehicleTypeId: 'truck',
                           ),
                           buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/suz.jpeg',
-                            label: 'GoFast',
+                            label: 'Mini-Truck',
+                            vehicleTypeId: 'mini_truck',
                           ),
                           buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/big.jpeg',
-                            label: 'FrozenGo',
+                            label: 'Refrigerated Truck',
+                            vehicleTypeId: 'refrigerated_truck',
                           ),
                           buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/heavy.jpeg',
-                            label: 'HeavyLoad',
+                            label: 'Heavy Truck',
+                            vehicleTypeId: 'heavy_truck',
                           ),
                           buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/easy.jpeg',
-                            label: 'EasyGo',
+                            label: 'Motorcycle',
+                            vehicleTypeId: 'motorcycle',
                           ),
                         ],
                       ),
@@ -579,10 +593,11 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     required BuildContext context,
     required String image,
     required String label,
+    required String vehicleTypeId,
   }) {
     return InkWell(
       onTap: () {
-        context.push('/customer/post-job');
+        context.push('/customer/post-job', extra: vehicleTypeId);
       },
       child: Container(
         width: double.infinity,

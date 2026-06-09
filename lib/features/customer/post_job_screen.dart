@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -26,7 +27,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// 3. Dropoff Location (Map Picker + Search)
 /// 4. Review & Confirm
 class PostJobScreen extends HookConsumerWidget {
-  const PostJobScreen({super.key});
+  /// The initial vehicle type to select (e.g. from the home screen quick links).
+  final String? initialVehicleType;
+
+  /// Creates a [PostJobScreen].
+  const PostJobScreen({super.key, this.initialVehicleType});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,11 +43,12 @@ class PostJobScreen extends HookConsumerWidget {
     // ── Form Data State ──────────────────────────────────────────────────────
     
     final descriptionCtrl = useTextEditingController();
+    final weightCtrl = useTextEditingController();
     final pickupLocation = useState<LatLng?>(null);
     final pickupAddress = useState('');
     final dropoffLocation = useState<LatLng?>(null);
     final dropoffAddress = useState('');
-    final vehicleType = useState('motorcycle');
+    final vehicleType = useState(initialVehicleType ?? 'motorcycle');
 
     const totalSteps = 4;
     final locationService = ref.read(locationServiceProvider);
@@ -130,6 +136,7 @@ class PostJobScreen extends HookConsumerWidget {
           // Step 1: Text description of the delivery items
           _ItemDetailsStep(
             controller: descriptionCtrl,
+            weightController: weightCtrl,
             selectedVehicle: vehicleType.value,
             onVehicleChanged: (v) => vehicleType.value = v,
             onNext: goNext,
@@ -162,6 +169,7 @@ class PostJobScreen extends HookConsumerWidget {
           // Step 4: Final summary and submission
           _ReviewStep(
             description: descriptionCtrl.text,
+            weight: weightCtrl.text,
             pickup: pickupAddress.value,
             dropoff: dropoffAddress.value,
             pickupLatLng: pickupLocation.value,
@@ -182,6 +190,7 @@ class PostJobScreen extends HookConsumerWidget {
                 pickupAddress: pickupAddress.value,
                 dropoffAddress: dropoffAddress.value,
                 itemDescription: descriptionCtrl.text,
+                itemWeightKg: double.tryParse(weightCtrl.text.trim()),
                 vehicleTypeRequired: vehicleType.value,
                 pricePiastres: calculatedPrice,
                 commissionPiastres: calculatedCommission,
@@ -216,14 +225,27 @@ class PostJobScreen extends HookConsumerWidget {
 
 // ── Step 1 Sub-Widget ────────────────────────────────────────
 
+/// Step 1: Collects item description, weight, and desired vehicle type.
 class _ItemDetailsStep extends StatelessWidget {
+  /// Controller for the item description input.
   final TextEditingController controller;
+
+  /// Controller for the item weight input.
+  final TextEditingController weightController;
+
+  /// The currently selected vehicle type ID.
   final String selectedVehicle;
+
+  /// Callback when the selected vehicle type changes.
   final ValueChanged<String> onVehicleChanged;
+
+  /// Callback to proceed to the next step.
   final VoidCallback onNext;
 
+  /// Creates an [_ItemDetailsStep].
   const _ItemDetailsStep({
     required this.controller,
+    required this.weightController,
     required this.selectedVehicle,
     required this.onVehicleChanged,
     required this.onNext,
@@ -252,15 +274,59 @@ class _ItemDetailsStep extends StatelessWidget {
             TextField(
               controller: controller,
               maxLines: 4,
-              maxLength: 200,
               decoration: InputDecoration(
-                labelText: 'Item description',
-                hintText: 'e.g. Medium box of books, fragile',
+                hintText: 'E.g., 2 large boxes, 1 small table...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF0F1F91), width: 2),
+                ),
                 filled: true,
-                fillColor: const Color(0xFFF2F2F2),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                fillColor: const Color(0xFFF9FAFB),
               ),
             ),
+            
+            const SizedBox(height: 24),
+            
+            const Text(
+              'Weight',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F1F91),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                hintText: 'Weight of the item (in kg)',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF0F1F91), width: 2),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF9FAFB),
+                suffixText: 'kg',
+              ),
+            ),
+
             const SizedBox(height: 24),
             const Text(
               'Select Vehicle Type',
@@ -271,19 +337,53 @@ class _ItemDetailsStep extends StatelessWidget {
               children: [
                 _VehicleOption(
                   label: 'Motorcycle',
-                  icon: Icons.motorcycle,
+                  icon: Icons.two_wheeler,
                   price: '5 EGP/km',
                   isSelected: selectedVehicle == 'motorcycle',
                   onTap: () => onVehicleChanged('motorcycle'),
                 ),
                 const SizedBox(width: 12),
                 _VehicleOption(
-                  label: 'Car / Van',
-                  icon: Icons.local_shipping,
-                  price: '7 EGP/km',
-                  isSelected: selectedVehicle == 'car',
-                  onTap: () => onVehicleChanged('car'),
+                  label: 'Mini-Truck',
+                  icon: Icons.local_shipping_outlined,
+                  price: '10 EGP/km',
+                  isSelected: selectedVehicle == 'mini_truck',
+                  onTap: () => onVehicleChanged('mini_truck'),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _VehicleOption(
+                  label: 'Truck',
+                  icon: Icons.local_shipping,
+                  price: '15 EGP/km',
+                  isSelected: selectedVehicle == 'truck',
+                  onTap: () => onVehicleChanged('truck'),
+                ),
+                const SizedBox(width: 12),
+                _VehicleOption(
+                  label: 'Heavy Truck',
+                  icon: Icons.fire_truck,
+                  price: '25 EGP/km',
+                  isSelected: selectedVehicle == 'heavy_truck',
+                  onTap: () => onVehicleChanged('heavy_truck'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _VehicleOption(
+                  label: 'Refrigerated',
+                  icon: Icons.ac_unit,
+                  price: '30 EGP/km',
+                  isSelected: selectedVehicle == 'refrigerated_truck',
+                  onTap: () => onVehicleChanged('refrigerated_truck'),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: SizedBox()),
               ],
             ),
             const SizedBox(height: 32),
@@ -371,12 +471,21 @@ class _VehicleOption extends StatelessWidget {
 
 // ── Step 2/3 Sub-Widget (Map Picker) ────────────────────────
 
+/// A generic map picker step for choosing either pickup or dropoff locations.
 class _LocationPickerStep extends HookConsumerWidget {
+  /// The title displayed on the picker (e.g. "Pickup Location").
   final String title;
+
+  /// Callback when the user confirms their selected location.
   final void Function(LatLng, String) onConfirmed;
+
+  /// Optional initial map center coordinates.
   final LatLng? initialLocation;
+
+  /// Optional initial resolved address string.
   final String? initialAddress;
 
+  /// Creates a [_LocationPickerStep].
   const _LocationPickerStep({
     required this.title,
     required this.onConfirmed,
@@ -602,17 +711,36 @@ class _LocationPickerStep extends HookConsumerWidget {
 
 // ── Step 4 Sub-Widget (Review) ─────────────────────────────
 
+/// Step 4: Final review and confirmation of the job details before posting.
 class _ReviewStep extends HookConsumerWidget {
+  /// Description of the item.
   final String description;
+
+  /// Weight of the item.
+  final String weight;
+
+  /// Pickup address string.
   final String pickup;
+
+  /// Dropoff address string.
   final String dropoff;
+
+  /// Pickup map coordinates.
   final LatLng? pickupLatLng;
+
+  /// Dropoff map coordinates.
   final LatLng? dropoffLatLng;
+
+  /// Chosen vehicle type.
   final String vehicleType;
+
+  /// Callback invoked to post the job with calculated pricing.
   final Function(int price, int commission, int net) onPost;
 
+  /// Creates a [_ReviewStep].
   const _ReviewStep({
     required this.description,
+    required this.weight,
     required this.pickup,
     required this.dropoff,
     this.pickupLatLng,
@@ -686,12 +814,7 @@ class _ReviewStep extends HookConsumerWidget {
     int calculatedNet = 0;
 
     if (routeInfo.value != null) {
-      final distanceKm = routeInfo.value!.distanceMeters / 1000.0;
-      // motorcycle: 5 EGP/km, others: 7 EGP/km
-      final ratePerKm = vehicleType == 'motorcycle' ? 5 : 7; 
-      final totalEgp = (distanceKm * ratePerKm).ceil();
-      
-      calculatedPrice = totalEgp * 100; // to Piastres
+      calculatedPrice = calculateJobPrice(routeInfo.value!.distanceMeters, vehicleType);
       calculatedCommission = (calculatedPrice * 0.03).round();
       calculatedNet = calculatedPrice - calculatedCommission;
     }
@@ -854,11 +977,19 @@ class _ReviewStep extends HookConsumerWidget {
                         const Divider(color: Colors.white24),
                         const SizedBox(height: 8),
 
-                        // Item Description Row
                         _ReviewRow(
                           label: 'Item Description',
                           value: description,
                           icon: Icons.inventory_2_outlined,
+                        ),
+                        const SizedBox(height: 4),
+                        const Divider(color: Colors.white10),
+                        const SizedBox(height: 4),
+
+                        _ReviewRow(
+                          label: 'Weight (Kg)',
+                          value: weight.isNotEmpty ? '$weight kg' : 'Not specified',
+                          icon: Icons.scale_outlined,
                         ),
                         const SizedBox(height: 4),
                         const Divider(color: Colors.white10),

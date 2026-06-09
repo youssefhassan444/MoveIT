@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+/// A highly styled map pin marker.
+/// Uses a circular container with an icon and a glowing drop shadow.
 class PremiumMapPin extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -43,6 +45,8 @@ class PremiumMapPin extends StatelessWidget {
   }
 }
 
+/// A specific map pin styled for drivers.
+/// Uses the brand navy color and a navigation arrow icon.
 class PremiumDriverPin extends StatelessWidget {
   final double size;
 

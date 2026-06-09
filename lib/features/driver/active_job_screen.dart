@@ -1184,9 +1184,9 @@ class ActiveJobScreen extends HookConsumerWidget {
 
                           // Communication Buttons (Call/Message)
                           ActionButtonsRow(
-                            callLabel: 'Call Customer',
-                            messageLabel: 'Message Customer',
-                            reportLabel: 'Report Issue',
+                            callLabel: 'Call',
+                            messageLabel: 'Message',
+                            reportLabel: 'Report',
                             onCall: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Calling $customerName ($customerContact)')),

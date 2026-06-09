@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/location_service.dart';
 import '../theme/app_theme.dart';
 
+/// A banner widget that displays the current location address and status.
+/// Allows the user to toggle location services or refresh their address.
 class LocationAddressBanner extends ConsumerWidget {
   const LocationAddressBanner({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch location status and current resolved address.
     final status = ref.watch(locationStatusProvider);
     final currentAddress = ref.watch(currentAddressProvider);
     final isEnabled = status == LocationStatus.enabled;
@@ -37,13 +40,16 @@ class LocationAddressBanner extends ConsumerWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
+          // Only allow tap to change settings if location is not enabled.
           onTap: isEnabled
               ? null
               : () {
                   final notifier = ref.read(locationStatusProvider.notifier);
                   if (notifier.isManuallyDisabled) {
+                    // Turn it back on manually.
                     notifier.toggleManualOn();
                   } else {
+                    // Otherwise try to open device settings.
                     try {
                       ref.read(locationServiceProvider).openSettings();
                     } catch (e) {
@@ -211,7 +217,9 @@ class LocationAddressBanner extends ConsumerWidget {
   }
 }
 
+/// A custom widget that renders a continuously pulsing circle animation.
 class _PulsingRing extends StatefulWidget {
+  /// The base color of the pulsing ring.
   final Color color;
   const _PulsingRing({required this.color});
 

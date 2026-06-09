@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/location_service.dart';
 
+/// A small, pill-shaped indicator showing the current location status (On/Off).
+/// Tapping it allows the user to manually toggle the location or open settings.
 class LocationStatusIndicator extends ConsumerWidget {
   const LocationStatusIndicator({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the global location status.
     final status = ref.watch(locationStatusProvider);
     final isEnabled = status == LocationStatus.enabled;
 
+    // Determine visual feedback based on status.
     final statusColor = isEnabled ? const Color(0xFF2ECC71) : Colors.grey.shade500;
     final text = isEnabled ? 'Location On' : 'Location Off';
 
@@ -17,11 +21,14 @@ class LocationStatusIndicator extends ConsumerWidget {
       onTap: () {
         final notifier = ref.read(locationStatusProvider.notifier);
         if (isEnabled) {
+          // Manually turn location sharing off.
           notifier.toggleManualOff();
         } else {
           if (notifier.isManuallyDisabled) {
+            // Turn it back on if it was manually disabled.
             notifier.toggleManualOn();
           } else {
+            // If system-disabled, open system settings.
             try {
               ref.read(locationServiceProvider).openSettings();
             } catch (e) {

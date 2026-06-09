@@ -1,3 +1,4 @@
+// ignore_for_file: unawaited_futures
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -18,6 +19,7 @@ class SignupScreen extends HookConsumerWidget {
     final emailCtrl = useTextEditingController();
     final passCtrl = useTextEditingController();
     final confirmCtrl = useTextEditingController();
+    final licensePlateCtrl = useTextEditingController();
     final role = useState('customer');
     final vehicleType = useState<String>('motorcycle');
     final loading = useState(false);
@@ -35,6 +37,7 @@ class SignupScreen extends HookConsumerWidget {
             displayName: nameCtrl.text.trim(),
             role: role.value,
             vehicleType: role.value == 'driver' ? vehicleType.value : null,
+            licensePlate: role.value == 'driver' ? licensePlateCtrl.text.trim() : null,
           );
       loading.value = false;
 
@@ -153,30 +156,84 @@ class SignupScreen extends HookConsumerWidget {
                     child: role.value == 'driver'
                         ? Column(children: [
                             const SizedBox(height: 16),
+                            TextFormField(
+                              controller: licensePlateCtrl,
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: InputDecoration(
+                                labelText: 'License Plate',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                              ),
+                              validator: (v) => (role.value == 'driver' && (v == null || v.trim().isEmpty))
+                                  ? 'Enter your license plate'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
                             DropdownButtonFormField<String>(
                               initialValue: vehicleType.value,
+                              dropdownColor: Colors.white,
                               decoration: InputDecoration(
                                 labelText: 'Vehicle Type',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
+                                filled: true,
+                                fillColor: Colors.grey[50],
                               ),
-                              items: const [
+                              items: [
                                 DropdownMenuItem(
-                                    value: 'motorcycle',
-                                    child: Text('🏍️  Motorcycle'),),
+                                  value: 'motorcycle',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/easy.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Motorcycle'),
+                                    ],
+                                  ),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'sedan',
-                                    child: Text('🚗  Sedan Car'),),
+                                  value: 'mini_truck',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/suz.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Mini-Truck'),
+                                    ],
+                                  ),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'pickup',
-                                    child: Text('🛻  Pickup Truck'),),
+                                  value: 'truck',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/nos.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Truck'),
+                                    ],
+                                  ),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'van',
-                                    child: Text('🚐  Van'),),
+                                  value: 'heavy_truck',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/heavy.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Heavy Truck'),
+                                    ],
+                                  ),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'truck',
-                                    child: Text('🚛  Large Truck'),),
+                                  value: 'refrigerated_truck',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/big.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Refrigerated Truck'),
+                                    ],
+                                  ),
+                                ),
                               ],
                               onChanged: (v) => vehicleType.value = v!,
                             ),

@@ -7,6 +7,9 @@ import 'auth_service.dart';
 
 /// ─────────────────────────────────────────────────────────────
 /// Optimistic Jobs
+/// 
+/// Provides local state management for jobs to make the UI feel
+/// instantly responsive before Firestore confirms the write.
 /// ─────────────────────────────────────────────────────────────
 
 final _optimisticJobsController =
@@ -225,8 +228,14 @@ final driverHistoryProvider = StreamProvider<List<JobModel>>((ref) {
 
 /// ─────────────────────────────────────────────────────────────
 /// LIFECYCLE
+/// 
+/// Functions to mutate job state and handle business logic.
 /// ─────────────────────────────────────────────────────────────
 
+/// Driver accepts a pending job.
+/// 
+/// Uses a Firestore transaction to ensure the job hasn't been taken
+/// by another driver concurrently.
 Future<String?> acceptJob(String jobId, String driverId) async {
   final ref = FirebaseFirestore.instance.collection('jobs').doc(jobId);
 
@@ -269,6 +278,9 @@ Future<String?> acceptJob(String jobId, String driverId) async {
   }
 }
 
+/// Updates the job status to 'in_transit'.
+/// 
+/// Can only be called by the assigned driver when the current status is 'accepted'.
 Future<String?> markJobInTransit(String jobId, String driverId) async {
   final ref = FirebaseFirestore.instance.collection('jobs').doc(jobId);
 
@@ -296,6 +308,9 @@ Future<String?> markJobInTransit(String jobId, String driverId) async {
   }
 }
 
+/// Marks a job as 'delivered' and updates the driver's earnings and wallet balance.
+/// 
+/// Calculates a 3% platform fee and deducts it from the driver's wallet.
 Future<String?> markJobDelivered(String jobId, String driverId) async {
   final ref = FirebaseFirestore.instance.collection('jobs').doc(jobId);
   final driverRef = FirebaseFirestore.instance.collection('users').doc(driverId);
@@ -335,6 +350,10 @@ Future<String?> markJobDelivered(String jobId, String driverId) async {
   }
 }
 
+/// Creates a new job document in Firestore.
+/// 
+/// If [job.id] is provided, it uses `set` on that specific document ID.
+/// Otherwise, it uses `add` to let Firestore generate an ID.
 Future<void> createJob(JobModel job) async {
   final col = FirebaseFirestore.instance.collection('jobs');
 
@@ -345,6 +364,9 @@ Future<void> createJob(JobModel job) async {
   }
 }
 
+/// Cancels a job from the driver's side.
+/// 
+/// Sets the status to 'cancelled' and records the cancellation time.
 Future<String?> cancelJobByDriver(String jobId) async {
   try {
     await FirebaseFirestore.instance.collection('jobs').doc(jobId).update({
@@ -357,6 +379,10 @@ Future<String?> cancelJobByDriver(String jobId) async {
   }
 }
 
+/// Reposts a cancelled or rejected job.
+/// 
+/// Resets the status to 'pending', clears the `driverId` and `acceptedAt`, 
+/// and updates the `createdAt` timestamp so it appears as a new request.
 Future<String?> repostJob(String jobId) async {
   try {
     await FirebaseFirestore.instance.collection('jobs').doc(jobId).update({

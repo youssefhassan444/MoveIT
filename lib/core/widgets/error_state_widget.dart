@@ -11,12 +11,15 @@ class ErrorStateWidget extends StatelessWidget {
   final VoidCallback onRetry;
   final String? lottieAsset;
 
+  final String buttonText;
+
   const ErrorStateWidget({
     super.key,
     this.title = 'Something went wrong',
     required this.message,
     required this.onRetry,
     this.lottieAsset, // e.g. 'assets/lottie/error.json'
+    this.buttonText = 'Try Again',
   });
 
   @override
@@ -45,7 +48,7 @@ class ErrorStateWidget extends StatelessWidget {
                 textAlign: TextAlign.center,),
             const SizedBox(height: 32),
             ElevatedButton(
-                onPressed: onRetry, child: const Text('Try Again'),),
+                onPressed: onRetry, child: Text(buttonText),),
           ],
         ),
       ),

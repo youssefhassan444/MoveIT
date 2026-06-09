@@ -1,6 +1,9 @@
+// ignore_for_file: unused_element
 import 'package:flutter/material.dart';
 
 import '../../features/auth/login_screen.dart';
+
+/// The settings screen for managing app preferences and account options.
 class SettingsPage extends StatefulWidget {
   static const String routeName = 'settings';
 
@@ -34,56 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(12),
         children: [
 
-          /// PROFILE CARD
-          _card(
-            child: Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F1F91),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'SA',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                ),
 
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        address,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 10),
 
           /// PAYMENT
 
@@ -95,7 +49,9 @@ class _SettingsPageState extends State<SettingsPage> {
             _showLanguageDialog(context);
           }, trailing: Text(selectedLanguage),),
 
-          _tile(Icons.privacy_tip_outlined, 'Privacy Policy', () {}),
+          _tile(Icons.privacy_tip_outlined, 'Privacy Policy', () {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+          }),
 
           /// 🆕 SAFETY
           _tile(Icons.shield_outlined, 'Safety', () {
@@ -107,7 +63,9 @@ class _SettingsPageState extends State<SettingsPage> {
             _showHelpInfo(context);
           }),
 
-          _tile(Icons.info_outline, 'App Version', () {},
+          _tile(Icons.info_outline, 'App Version', () {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+          },
               trailing: const Text('1.0.0'),),
 
           const SizedBox(height: 10),
@@ -179,7 +137,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void _showLanguageDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Choose Language'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -188,14 +146,14 @@ class _SettingsPageState extends State<SettingsPage> {
               title: const Text('English'),
               onTap: () {
                 setState(() => selectedLanguage = 'English');
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
             ),
             ListTile(
               title: const Text('العربية'),
               onTap: () {
                 setState(() => selectedLanguage = 'العربية');
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
             ),
           ],
@@ -208,14 +166,14 @@ class _SettingsPageState extends State<SettingsPage> {
   void _showSafetyInfo(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Safety'),
         content: const Text(
           'Your safety is important. Always verify driver details before pickup and never share sensitive information.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('OK'),
           ),
         ],
@@ -227,14 +185,14 @@ class _SettingsPageState extends State<SettingsPage> {
   void _showHelpInfo(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Help & Support'),
         content: const Text(
           'Need help? Contact our support team at support@moveit.com or use in-app chat.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Close'),
           ),
         ],
@@ -244,24 +202,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
 
 
-  /// ================= DELETE =================
+  /// ================= DELETE ACCOUNT =================
   void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Account'),
         content: const Text(
-          'This action cannot be undone. Do you want to continue?',
-        ),
+            'Are you sure you want to delete your account? This action cannot be undone.',),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-
+              Navigator.pop(dialogContext);
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(

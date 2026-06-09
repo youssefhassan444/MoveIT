@@ -9,25 +9,42 @@ import '../../services/auth_service.dart';
 import '../../services/job_service.dart';
 import '../../services/routing_service.dart';
 
+/// A screen that displays the details of a specific job in the driver's history.
+///
+/// It fetches the job details from [singleJobProvider] and displays a static map
+/// with the pickup and dropoff locations, the calculated route between them,
+/// and details about the customer and job status.
 class DriverJobDetailScreen extends HookConsumerWidget {
+  /// The ID of the job to display.
   final String jobId;
+
+  /// Creates a [DriverJobDetailScreen].
   const DriverJobDetailScreen({super.key, required this.jobId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the specific job details
     final jobAsync = ref.watch(singleJobProvider(jobId));
     final job = jobAsync.asData?.value;
+
+    // Fetch the customer details associated with the job
     final customerAsync = job != null
         ? ref.watch(userByIdProvider(job.customerId))
         : const AsyncValue.data(null);
 
+    // Hooks for route calculation state
     final routeInfo = useState<RouteInfo?>(null);
     final routeError = useState<String?>(null);
     final isRouteLoading = useState<bool>(false);
+
+    // Map controller and readiness state
     final mapController = useMemoized(() => MapController());
     final mapReady = useState<bool>(false);
+
+    // Controller for the draggable bottom sheet
     final sheetController = useMemoized(() => DraggableScrollableController());
 
+    // Effect: Calculate the route between pickup and dropoff points
     useEffect(() {
       if (job == null) {
         routeInfo.value = null;
@@ -40,6 +57,7 @@ class DriverJobDetailScreen extends HookConsumerWidget {
       isRouteLoading.value = true;
       routeError.value = null;
 
+      // Fetch the route using the routing service
       fetchRouteInfo(
         LatLng(job.pickupLatLng.latitude, job.pickupLatLng.longitude),
         LatLng(job.dropoffLatLng.latitude, job.dropoffLatLng.longitude),
@@ -58,6 +76,7 @@ class DriverJobDetailScreen extends HookConsumerWidget {
       };
     }, [job?.id],);
 
+    // Effect: Adjust the map camera to fit the route once loaded
     useEffect(() {
       if (job == null || !mapReady.value) return null;
 
@@ -121,6 +140,8 @@ class DriverJobDetailScreen extends HookConsumerWidget {
         final routePoints = route?.points ?? [pickupPoint, dropoffPoint];
         final etaMinutes =
             route != null ? (route.durationSeconds / 60).round() : 0;
+            
+        // Build the polyline for the route
         final routePolyline = Polyline(
           points: routePoints,
           color: AppTheme.brandOrange,
@@ -130,6 +151,8 @@ class DriverJobDetailScreen extends HookConsumerWidget {
           strokeCap: StrokeCap.round,
           strokeJoin: StrokeJoin.round,
         );
+        
+        // Calculate the distance in miles
         final distanceMiles =
             route != null ? route.distanceMeters / 1609.344 :
             const Distance().as(LengthUnit.Meter, pickupPoint, dropoffPoint) / 1609.344;
@@ -207,6 +230,7 @@ class DriverJobDetailScreen extends HookConsumerWidget {
                 minChildSize: 0.15,
                 maxChildSize: 0.65,
                 builder: (context, scrollController) {
+                  // Determine status booleans for the progress indicator
                   const orderDone = true;
                   final pickupDone = job.status != 'pending';
                   final transitDone =
@@ -240,20 +264,18 @@ class DriverJobDetailScreen extends HookConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              child: Text(job.itemDescription,
-                                  style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,),),
+                              child: Text(job.itemDescription, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                             ),
                             Chip(
-                              label: Text(statusLabel,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,),),
+                              label: Text(statusLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                               backgroundColor: AppTheme.brandSkyBlue,
                             ),
                           ],
                         ),
+                        if (job.itemWeightKg != null) ...[
+                          const SizedBox(height: 8),
+                          Text('Weight: ${job.itemWeightKg} kg', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
+                        ],
                         const SizedBox(height: 16),
                         Row(children: [
                           const Icon(Icons.location_on,
@@ -282,35 +304,17 @@ class DriverJobDetailScreen extends HookConsumerWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Distance',
-                                    style: TextStyle(
-                                        color: Colors.grey, fontSize: 12,),),
+                                const Text('Distance', style: TextStyle(color: Colors.black87, fontSize: 12)),
                                 const SizedBox(height: 4),
-                                Text(
-                                    distanceMiles > 0
-                                        ? '${distanceMiles.toStringAsFixed(1)} mi'
-                                        : (isRouteLoading.value
-                                            ? 'Loading...'
-                                            : 'Unavailable'),
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,),),
+                                Text(distanceMiles > 0 ? '${distanceMiles.toStringAsFixed(1)} mi' : (isRouteLoading.value ? 'Loading...' : 'Unavailable'), style: const TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('ETA',
-                                    style: TextStyle(
-                                        color: Colors.grey, fontSize: 12,),),
+                                const Text('ETA', style: TextStyle(color: Colors.black87, fontSize: 12)),
                                 const SizedBox(height: 4),
-                                Text(
-                                    etaMinutes > 0
-                                        ? '$etaMinutes min'
-                                        : (isRouteLoading.value
-                                            ? 'Loading...'
-                                            : 'Unavailable'),
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,),),
+                                Text(etaMinutes > 0 ? '$etaMinutes min' : (isRouteLoading.value ? 'Loading...' : 'Unavailable'), style: const TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ],
@@ -401,10 +405,16 @@ class DriverJobDetailScreen extends HookConsumerWidget {
   }
 }
 
+/// A visual indicator for a single step in the delivery progress timeline.
 class _StatusStep extends StatelessWidget {
+  /// The label for the step (e.g., 'Pickup').
   final String label;
+  /// Whether the step is currently active or past.
   final bool active;
+  /// Whether the step has been completed.
   final bool done;
+  
+  /// Creates a [_StatusStep].
   const _StatusStep(
       {required this.label, required this.active, required this.done,});
 
@@ -427,12 +437,9 @@ class _StatusStep extends StatelessWidget {
               : null,
         ),
         const SizedBox(height: 4),
-        Text(label,
-            style: TextStyle(
-                fontSize: 10,
-                color: active ? AppTheme.brandNavy : Colors.grey,
-                fontWeight: active ? FontWeight.bold : FontWeight.normal,),),
+        Text(label, style: TextStyle(fontSize: 10, color: active ? AppTheme.brandNavy : Colors.black87, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
       ],
     );
   }
 }
+

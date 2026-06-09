@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
@@ -40,7 +41,22 @@ class AuthWrapper extends ConsumerWidget {
             }
 
             // Redirect based on role
-            if (model.role == 'customer') {
+            if (model.role == 'admin' || model.role == 'super_admin') {
+              if (!kIsWeb) {
+                return ErrorStateWidget(
+                  title: 'Access Denied',
+                  message: 'Admins cannot log in from the mobile app. Please use the web portal.',
+                  buttonText: 'Sign Out',
+                  onRetry: () async {
+                    await ref.read(authServiceProvider).signOut();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
+                  },
+                );
+              }
+              return const _Redirector(target: '/admin');
+            } else if (model.role == 'customer') {
               return const _Redirector(target: '/customer');
             } else {
               return const _Redirector(target: '/driver');

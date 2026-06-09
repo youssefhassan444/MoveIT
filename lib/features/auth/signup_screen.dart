@@ -1,3 +1,4 @@
+// ignore_for_file: unawaited_futures
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -9,39 +10,62 @@ import '../../core/widgets/custom_snackbar.dart';
 import '../../core/errors/app_error.dart';
 import '../../services/auth_service.dart';
 
+/// A screen that handles new user registration for both customers and drivers.
+///
+/// This screen collects the necessary details such as name, email, password,
+/// and role-specific information (like vehicle type and license plate for drivers).
 class SignupScreen extends HookConsumerWidget {
   const SignupScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Text controllers for user input.
     final nameCtrl = useTextEditingController();
     final emailCtrl = useTextEditingController();
     final passCtrl = useTextEditingController();
     final confirmCtrl = useTextEditingController();
+    final licensePlateCtrl = useTextEditingController();
+    
+    // State for the selected user role. Defaults to 'customer'.
     final role = useState('customer');
+    
+    // State for the selected vehicle type. Relevant only for 'driver' role.
     final vehicleType = useState<String>('motorcycle');
+    
+    // State to indicate whether a signup operation is currently in progress.
     final loading = useState(false);
+    
+    // Form key for validation.
     final formKey = useMemoized(() => GlobalKey<FormState>());
 
+    /// Handles the sign-up process by validating the form and creating the account.
     Future<void> signup() async {
+      // Validate the form before attempting sign-up.
       if (!formKey.currentState!.validate()) {
         HapticFeedback.mediumImpact();
         return;
       }
       loading.value = true;
+      
+      // Call the authentication service to sign up the user.
       final result = await ref.read(authServiceProvider).signUp(
             email: emailCtrl.text.trim(),
             password: passCtrl.text.trim(),
             displayName: nameCtrl.text.trim(),
             role: role.value,
+            // Include vehicle details only if the role is 'driver'.
             vehicleType: role.value == 'driver' ? vehicleType.value : null,
+            licensePlate: role.value == 'driver' ? licensePlateCtrl.text.trim() : null,
           );
       loading.value = false;
 
       if (!context.mounted) return;
+      
+      // Handle the result of the sign-up operation.
       result.when(
-        success: (_) => context.go('/auth'),
+        success: (_) => context.go('/auth'), // Navigate to the auth wrapper on success.
         failure: (error) {
+          // Show error message on failure.
           HapticFeedback.heavyImpact();
           CustomSnackBar.show(
             context,
@@ -153,30 +177,84 @@ class SignupScreen extends HookConsumerWidget {
                     child: role.value == 'driver'
                         ? Column(children: [
                             const SizedBox(height: 16),
+                            TextFormField(
+                              controller: licensePlateCtrl,
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: InputDecoration(
+                                labelText: 'License Plate',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                              ),
+                              validator: (v) => (role.value == 'driver' && (v == null || v.trim().isEmpty))
+                                  ? 'Enter your license plate'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
                             DropdownButtonFormField<String>(
                               initialValue: vehicleType.value,
+                              dropdownColor: Colors.white,
                               decoration: InputDecoration(
                                 labelText: 'Vehicle Type',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
+                                filled: true,
+                                fillColor: Colors.grey[50],
                               ),
-                              items: const [
+                              items: [
                                 DropdownMenuItem(
-                                    value: 'motorcycle',
-                                    child: Text('🏍️  Motorcycle'),),
+                                  value: 'motorcycle',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/easy.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Motorcycle'),
+                                    ],
+                                  ),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'sedan',
-                                    child: Text('🚗  Sedan Car'),),
+                                  value: 'mini_truck',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/suz.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Mini-Truck'),
+                                    ],
+                                  ),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'pickup',
-                                    child: Text('🛻  Pickup Truck'),),
+                                  value: 'truck',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/nos.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Truck'),
+                                    ],
+                                  ),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'van',
-                                    child: Text('🚐  Van'),),
+                                  value: 'heavy_truck',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/heavy.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Heavy Truck'),
+                                    ],
+                                  ),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'truck',
-                                    child: Text('🚛  Large Truck'),),
+                                  value: 'refrigerated_truck',
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/moveit_master/big.jpeg', width: 40, height: 25, fit: BoxFit.contain),
+                                      const SizedBox(width: 10),
+                                      const Text('Refrigerated Truck'),
+                                    ],
+                                  ),
+                                ),
                               ],
                               onChanged: (v) => vehicleType.value = v!,
                             ),
@@ -232,6 +310,7 @@ class SignupScreen extends HookConsumerWidget {
   }
 }
 
+/// A custom widget to toggle between the 'customer' and 'driver' roles.
 class _RoleToggle extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onChanged;
@@ -263,6 +342,7 @@ class _RoleToggle extends StatelessWidget {
   }
 }
 
+/// A single tab within the [_RoleToggle] widget representing a specific role.
 class _Tab extends StatelessWidget {
   final String label, value, selected;
   final ValueChanged<String> onChanged;

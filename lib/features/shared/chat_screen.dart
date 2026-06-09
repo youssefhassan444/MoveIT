@@ -5,6 +5,11 @@ import '../../services/chat_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/chat_message_model.dart';
 
+/// A screen for real-time chat between customers and drivers.
+///
+/// This screen displays a list of messages for a specific [jobId] and allows
+/// the current user to send new messages. It uses the [chatServiceProvider]
+/// to watch and send messages.
 class ChatScreen extends ConsumerStatefulWidget {
   final String jobId;
 
@@ -15,7 +20,10 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
+  // Controller for the message input field.
   final _textController = TextEditingController();
+  
+  // Controller for the chat list view to manage scrolling.
   final _scrollController = ScrollController();
 
   @override
@@ -25,6 +33,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
+  /// Handles sending a new message to the chat.
   void _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
@@ -32,6 +41,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final user = ref.read(authServiceProvider).currentUser;
     if (user == null) return;
 
+    // Construct the message model.
     final message = ChatMessageModel(
       id: '',
       jobId: widget.jobId,
@@ -43,8 +53,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     _textController.clear();
     try {
+      // Send the message via the chat service.
       await ref.read(chatServiceProvider).sendMessage(message);
 
+      // Scroll to the bottom (index 0 since reverse: true) after sending.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(

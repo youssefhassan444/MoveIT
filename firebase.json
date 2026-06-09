@@ -35,7 +35,7 @@
     }
   },
   "hosting": {
-    "public": "moveit-web/dist",
+    "public": "build/web",
     "ignore": [
       "firebase.json",
       "**/.*",

@@ -5,12 +5,21 @@ import 'package:go_router/go_router.dart';
 import '../../../models/job_model.dart';
 import '../../../services/job_service.dart';
 
+/// A widget that displays a summary card for a specific job.
+///
+/// It shows details such as item description, price, pickup/dropoff addresses,
+/// creation time, and the current status of the job. Also provides action buttons
+/// based on the job status (e.g., Repost or View Details).
 class CustomerJobCard extends ConsumerWidget {
+  /// The job model containing the data to display.
   final JobModel job;
+
+  /// Creates a [CustomerJobCard].
   const CustomerJobCard({super.key, required this.job});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Formatter to display the price in EGP.
     final currencyFormat = NumberFormat.currency(
       symbol: 'EGP ',
       decimalDigits: 2,
@@ -272,13 +281,19 @@ class CustomerJobCard extends ConsumerWidget {
   }
 }
 
+/// A small badge widget to visually indicate the current status of a job.
 class _CustomerStatusBadge extends StatelessWidget {
+  /// The raw status string from the backend (e.g. 'pending', 'accepted').
   final String status;
+
+  /// Creates a [_CustomerStatusBadge].
   const _CustomerStatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
     Color color;
+
+    // Determine the badge color based on the job status.
 
     switch (status) {
       case 'pending':

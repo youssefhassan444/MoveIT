@@ -1,7 +1,9 @@
+// ignore_for_file: unawaited_futures
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -9,21 +11,35 @@ import '../../core/widgets/custom_snackbar.dart';
 import '../../core/errors/app_error.dart';
 import '../../services/auth_service.dart';
 
+/// A screen that allows existing users to log into the application.
+///
+/// This screen uses [HookConsumerWidget] to manage local form state (like 
+/// email, password, and loading status) while also interacting with Riverpod
+/// providers for authentication.
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Controllers for email and password text fields.
     final emailCtrl = useTextEditingController();
     final passCtrl = useTextEditingController();
+    
+    // State to manage the loading indicator during the login process.
     final loading = useState(false);
+    
+    // Key to validate the form fields.
     final formKey = useMemoized(() => GlobalKey<FormState>());
 
+    /// Handles the login process by validating the form and calling the
+    /// authentication service.
     Future<void> login() async {
+      // Validate form fields before proceeding.
       if (!formKey.currentState!.validate()) {
         HapticFeedback.mediumImpact();
         return;
       }
+      
       loading.value = true;
       final auth = ref.read(firebaseAuthProvider);
       final result = await ref.read(authServiceProvider).signIn(
@@ -33,15 +49,21 @@ class LoginScreen extends HookConsumerWidget {
       loading.value = false;
 
       if (!context.mounted) return;
+      
+      // On success, ensure the user state is updated before navigating.
       if (result.isSuccess) {
         if (auth.currentUser == null) {
+          // Wait for the auth state change to reflect the logged-in user.
           await auth.authStateChanges().firstWhere((user) => user != null);
         }
         if (!context.mounted) return;
+        
+        // Navigate to the auth wrapper to handle routing based on user role.
         context.go('/auth');
         return;
       }
 
+      // Handle authentication failures.
       result.when(
         success: (_) => null,
         failure: (error) {
@@ -126,34 +148,6 @@ class LoginScreen extends HookConsumerWidget {
                         ? 'Password must be 6+ characters'
                         : null,
                   ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: loading.value ? null : () async {
-                        final email = emailCtrl.text.trim();
-                        if (email.isEmpty || !email.contains('@')) {
-                          CustomSnackBar.show(context, message: 'Please enter your email address first.', type: SnackBarType.error);
-                          return;
-                        }
-                        loading.value = true;
-                        final result = await ref.read(authServiceProvider).resetPassword(email);
-                        loading.value = false;
-                        
-                        if (!context.mounted) return;
-                        
-                        result.when(
-                          success: (_) {
-                            CustomSnackBar.show(context, message: 'Password reset link sent!', type: SnackBarType.success);
-                          },
-                          failure: (error) {
-                            CustomSnackBar.show(context, message: AppError.mapMessage(error), type: SnackBarType.error);
-                          },
-                        );
-                      },
-                      child: const Text('Forgot Password?', style: TextStyle(color: AppTheme.brandNavy, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
                   const SizedBox(height: 24),
                   // LOGIN Button
                   SizedBox(
@@ -184,39 +178,41 @@ class LoginScreen extends HookConsumerWidget {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'or',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black45,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // SIGN UP Button
-                  SizedBox(
-                    height: 56,
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => context.push('/signup'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.brandNavy,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 2,
-                      ),
-                      child: const Text(
-                        'SIGN UP',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  if (!kIsWeb) ...[
+                    const SizedBox(height: 20),
+                    const Text(
+                      'or',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black45,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 20),
+                    // SIGN UP Button
+                    SizedBox(
+                      height: 56,
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => context.push('/signup'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.brandNavy,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          'SIGN UP',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 30),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),

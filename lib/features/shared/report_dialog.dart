@@ -6,6 +6,11 @@ import '../../services/auth_service.dart';
 import '../../models/report_model.dart';
 
 
+/// A dialog widget that allows users to submit issue reports.
+///
+/// This dialog can be associated with a specific [jobId] and collects a
+/// subject and description for the report. It uses [reportServiceProvider]
+/// to submit the report to the backend.
 class ReportDialog extends ConsumerStatefulWidget {
   final String? jobId;
 
@@ -25,8 +30,11 @@ class ReportDialog extends ConsumerStatefulWidget {
 }
 
 class _ReportDialogState extends ConsumerState<ReportDialog> {
+  // Controllers for the report's subject and description input fields.
   final _subjectController = TextEditingController();
   final _descriptionController = TextEditingController();
+  
+  // State to manage the loading indicator during submission.
   bool _isSubmitting = false;
 
   @override
@@ -36,10 +44,12 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
     super.dispose();
   }
 
+  /// Handles the submission of the report.
   void _submit() async {
     final subject = _subjectController.text.trim();
     final description = _descriptionController.text.trim();
 
+    // Validate that both fields are filled out.
     if (subject.isEmpty || description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill out all fields.')),
@@ -47,6 +57,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
       return;
     }
 
+    // Retrieve the current user's details.
     final userModel = ref.read(currentUserDocProvider).value;
 
     if (userModel == null) {
@@ -59,6 +70,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
     setState(() => _isSubmitting = true);
 
     try {
+      // Construct the report model.
       final report = ReportModel(
         id: '',
         reporterId: userModel.uid,
@@ -73,6 +85,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
         createdAt: DateTime.now(),
       );
 
+      // Submit the report via the report service.
       await ref.read(reportServiceProvider).submitReport(report);
 
       if (mounted) {

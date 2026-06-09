@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/location_service.dart';
 import '../../services/auth_service.dart';
 
+/// A banner indicating that location permissions are denied.
+/// Prompts the user to open system settings to enable them.
 class LocationWarningBanner extends ConsumerWidget {
   const LocationWarningBanner({super.key});
 

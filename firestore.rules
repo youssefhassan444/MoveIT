@@ -3,7 +3,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      let role = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return role == 'admin' || role == 'super_admin';
+    }
+
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
     }
 
     // ── USERS ──────────────────────────────────────────────────────────────
@@ -13,7 +18,7 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null && (request.auth.uid == userId || isAdmin())
                     && (isAdmin() || (
-                         (request.resource.data.role != 'admin' || request.resource.data.get('adminSetupKey', '') == 'MOVEIT_ADMIN_INIT_2026')
+                         request.resource.data.role != 'admin'
                          && request.resource.data.get('isVerified', false) == false
                        ));
       allow update: if request.auth != null && (request.auth.uid == userId || isAdmin())
@@ -57,26 +62,48 @@ service cloud.firestore {
     // ── REPORTS ────────────────────────────────────────────────────────────
     match /reports/{reportId} {
       // Users can read their own reports, Admins can read all
-      allow read: if request.auth != null && (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow read: if request.auth != null;
       
       // Users can create reports for themselves
       allow create: if request.auth != null && request.resource.data.reporterId == request.auth.uid;
       
-      // Only admins can update/delete reports
-      allow update, delete: if request.auth != null && isAdmin();
+      // Admins can update status to 'elevated' or 'dismissed'.
+      // Super admins can update anything (e.g., 'resolved').
+      allow update: if request.auth != null && (
+         isSuperAdmin() || 
+         (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) && 
+          request.resource.data.status in ['elevated', 'dismissed'])
+      );
+      
+      // Only super admins can delete reports
+      allow delete: if request.auth != null && isSuperAdmin();
     }
 
     // ── TRACKING ───────────────────────────────────────────────────────────
     // Drivers can write their own tracking data; customers can read it.
     match /tracking/{trackingId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if request.auth != null && (
+        get(/databases/$(database)/documents/jobs/$(trackingId)).data.customerId == request.auth.uid
+        || get(/databases/$(database)/documents/jobs/$(trackingId)).data.driverId == request.auth.uid
+        || isAdmin()
+      );
+      allow write: if request.auth != null && (
+        get(/databases/$(database)/documents/jobs/$(trackingId)).data.driverId == request.auth.uid
+      );
     }
 
     // ── CHATS ──────────────────────────────────────────────────────────────
     match /chats/{messageId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
+      allow read: if request.auth != null && (
+        get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.customerId == request.auth.uid
+        || get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.driverId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid && (
+        get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.customerId == request.auth.uid
+        || get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.driverId == request.auth.uid
+        || isAdmin()
+      );
     }
 
     // ── TELEMETRY ──────────────────────────────────────────────────────────

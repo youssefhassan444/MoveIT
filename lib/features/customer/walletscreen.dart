@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'cardscreen.dart';
 
+/// A screen that displays the user's wallet balance and payment methods.
+///
+/// It allows users to view their current balance in EGP, view saved cards,
+/// and add new payment methods (e.g., credit/debit cards).
 class WalletScreen extends StatelessWidget {
+  /// The named route for this screen.
   static const String routeName = '/wallet';
 
+  /// Creates a [WalletScreen].
   const WalletScreen({super.key});
 
   @override
@@ -23,6 +29,7 @@ class WalletScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section displaying the current wallet balance.
 
           Padding(
             padding: const EdgeInsets.all(20),
@@ -67,6 +74,7 @@ class WalletScreen extends StatelessWidget {
 
           const Divider(),
 
+          // Section title for available payment methods.
           const Padding(
             padding: EdgeInsets.all(15),
             child: Text(
@@ -105,6 +113,7 @@ class WalletScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 15),
+          // Button to add a new card, navigating to the CardScreen.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             child: InkWell(
@@ -144,6 +153,7 @@ class WalletScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
+          // Section for displaying previously saved cards.
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 15),
             child: Text(

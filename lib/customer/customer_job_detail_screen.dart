@@ -271,7 +271,7 @@ class CustomerJobDetailScreen extends HookConsumerWidget {
                             ),
                           ),
                           IconButton(
-                            onPressed: () {},
+                            onPressed: () { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon'))); },
                             icon: const Icon(Icons.phone,
                                 color: AppTheme.brandSuccess,),
                           ),

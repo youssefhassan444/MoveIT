@@ -15,6 +15,8 @@ import '../../../core/theme/app_theme.dart';
 /// 1. Create a StreamProvider that queries the `users` collection.
 /// 2. Filter the stream client-side (or use Geofire for server-side queries).
 /// 3. Map the driver locations to `Marker` widgets.
+///
+/// Currently, this acts as a placeholder UI.
 class NearbyDriversMap extends HookConsumerWidget {
   const NearbyDriversMap({super.key});
 

@@ -88,6 +88,7 @@ class AuthService {
     required String displayName,
     required String role, // 'customer' or 'driver'
     String? vehicleType,  // Only required for drivers
+    String? licensePlate, // Only required for drivers
   }) async {
     try {
       final cred = await _auth.createUserWithEmailAndPassword(
@@ -103,6 +104,7 @@ class AuthService {
         email: email,
         createdAt: DateTime.now(),
         vehicleType: vehicleType,
+        licensePlate: licensePlate,
       );
 
       // Save the profile to the 'users' collection

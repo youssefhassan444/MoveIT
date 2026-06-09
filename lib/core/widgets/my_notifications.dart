@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Screen displaying the user's notifications.
 class MyNotificationsPage extends StatefulWidget {
   const MyNotificationsPage({super.key});
 
@@ -7,6 +8,7 @@ class MyNotificationsPage extends StatefulWidget {
   State<MyNotificationsPage> createState() => _MyNotificationsPageState();
 }
 
+/// Simple model representing a single notification item.
 class NotificationModel {
   final String title;
   final String body;

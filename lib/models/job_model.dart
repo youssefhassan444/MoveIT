@@ -27,6 +27,8 @@ class JobModel {
   final String dropoffAddress;
   final String itemDescription;
   final String? itemPhotoUrl;
+  final double? itemWeightKg;
+
   final String vehicleTypeRequired;
   
   /// Cost of the delivery in Piastres (e.g., 5000 = 50.00 EGP)
@@ -54,6 +56,7 @@ class JobModel {
     required this.dropoffAddress,
     required this.itemDescription,
     this.itemPhotoUrl,
+    this.itemWeightKg,
     required this.vehicleTypeRequired,
     required this.pricePiastres,
     required this.commissionPiastres,
@@ -84,6 +87,7 @@ class JobModel {
       dropoffAddress: d['dropoffAddress'] as String? ?? '',
       itemDescription: d['itemDescription'] as String? ?? '',
       itemPhotoUrl: d['itemPhotoUrl'] as String?,
+      itemWeightKg: (d['itemWeightKg'] as num?)?.toDouble(),
       vehicleTypeRequired: d['vehicleTypeRequired'] as String? ?? 'motorcycle',
       pricePiastres: d['pricePiastres'] as int? ?? 0,
       commissionPiastres: d['commissionPiastres'] as int? ?? 0,
@@ -105,6 +109,7 @@ class JobModel {
         'dropoffAddress': dropoffAddress,
         'itemDescription': itemDescription,
         if (itemPhotoUrl != null) 'itemPhotoUrl': itemPhotoUrl,
+        if (itemWeightKg != null) 'itemWeightKg': itemWeightKg,
         'vehicleTypeRequired': vehicleTypeRequired,
         'pricePiastres': pricePiastres,
         'commissionPiastres': commissionPiastres,
@@ -119,6 +124,7 @@ class JobModel {
   JobModel copyWith({
     String? driverId,
     String? status,
+    double? itemWeightKg,
     DateTime? acceptedAt,
     DateTime? deliveredAt,
   }) =>
@@ -133,6 +139,7 @@ class JobModel {
         dropoffAddress: dropoffAddress,
         itemDescription: itemDescription,
         itemPhotoUrl: itemPhotoUrl,
+        itemWeightKg: itemWeightKg ?? this.itemWeightKg,
         vehicleTypeRequired: vehicleTypeRequired,
         pricePiastres: pricePiastres,
         commissionPiastres: commissionPiastres,

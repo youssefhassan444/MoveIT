@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -17,7 +18,8 @@ import '../../services/geocoding_service.dart';
 import '../../services/location_service.dart';
 
 class PostJobScreen extends HookConsumerWidget {
-  const PostJobScreen({super.key});
+  final String? initialVehicleType;
+  const PostJobScreen({super.key, this.initialVehicleType});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,7 +31,7 @@ class PostJobScreen extends HookConsumerWidget {
     final pickupAddress = useState('');
     final dropoffLocation = useState<LatLng?>(null);
     final dropoffAddress = useState('');
-    final vehicleType = useState('motorcycle');
+    final vehicleType = useState(initialVehicleType ?? 'motorcycle');
 
     const totalSteps = 5;
 
@@ -403,10 +405,10 @@ class _VehicleTypeStep extends StatelessWidget {
 
   static const _vehicles = [
     ('motorcycle', '🏍️', 'Motorcycle'),
-    ('sedan', '🚗', 'Sedan Car'),
-    ('pickup', '🛻', 'Pickup Truck'),
-    ('van', '🚐', 'Van'),
-    ('truck', '🚛', 'Large Truck'),
+    ('mini_truck', '🚚', 'Mini-Truck'),
+    ('truck', '🛻', 'Truck'),
+    ('heavy_truck', '🚛', 'Heavy Truck'),
+    ('refrigerated_truck', '❄️', 'Refrigerated Truck'),
   ];
 
   @override

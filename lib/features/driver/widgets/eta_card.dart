@@ -3,14 +3,24 @@ import '../../../models/job_model.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// ETA / summary card shown in Active view. Includes dynamic Turn-by-Turn directions.
+///
+/// It presents the current estimated time of arrival, remaining distance,
+/// and contextual turn-by-turn navigation instructions if available.
 class EtaCard extends StatelessWidget {
+  /// The active delivery job.
   final JobModel job;
+  /// A string representing the estimated arrival time (e.g. "12:45 PM").
   final String etaLabel;
+  /// A string representing the remaining total distance.
   final String distanceLabel;
+  /// An optional active navigation instruction (e.g., "Turn left onto Main St").
   final String? activeInstruction;
+  /// An optional icon indicating the type of maneuver (e.g. left turn arrow).
   final IconData? maneuverIcon;
+  /// The distance remaining until the maneuver is required.
   final String? distanceToManeuver;
 
+  /// Creates an [EtaCard].
   const EtaCard({
     super.key,
     required this.job,

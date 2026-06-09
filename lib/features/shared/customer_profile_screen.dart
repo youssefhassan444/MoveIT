@@ -8,6 +8,11 @@ import '../../core/widgets/my_notifications.dart';
 import '../../core/widgets/settings.dart';
 import '../../core/widgets/editprofile.dart';
 
+/// A screen displaying the profile for a logged-in customer.
+///
+/// This screen provides a high-level view of the customer's information,
+/// including their name, email, and profile picture, along with navigation
+/// options to edit profile, view notifications, manage wallet, and settings.
 class CustomerProfileScreen extends ConsumerWidget {
   const CustomerProfileScreen({super.key});
 
@@ -33,6 +38,8 @@ class CustomerProfileScreen extends ConsumerWidget {
         slivers: [
 
           // ================= HEADER =================
+          // A flexible header that shrinks as the user scrolls, displaying
+          // the customer's avatar, name, email, and role badge.
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
@@ -130,6 +137,7 @@ class CustomerProfileScreen extends ConsumerWidget {
           ),
 
           // ================= BODY =================
+          // A scrollable list of profile options and actions.
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(18),
@@ -205,6 +213,7 @@ class CustomerProfileScreen extends ConsumerWidget {
   }
 
   // ================= TILE =================
+  /// A helper method to create a consistent list tile for profile options.
   Widget _tile({
     required IconData icon,
     required String title,
@@ -261,6 +270,7 @@ class CustomerProfileScreen extends ConsumerWidget {
   }
 
   // ================= LOGOUT =================
+  /// A helper method to build the logout button.
   Widget _logout(WidgetRef ref, BuildContext context) {
     return Container(
       width: double.infinity,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+/// A reusable shimmer loading effect widget.
+/// Used to display placeholder skeletons while data is being fetched.
 class MoveItLoadingShimmer extends StatelessWidget {
   final double width;
   final double height;

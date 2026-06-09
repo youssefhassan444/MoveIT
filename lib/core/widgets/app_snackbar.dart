@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 
+/// A utility class for displaying standard Material [SnackBar]s.
+/// Contains pre-configured methods for success, error, and informational messages.
 class AppSnackbar {
+  /// Displays a green success snackbar with a checkmark icon.
   static void showSuccess(BuildContext context, String message) {
     _showSnackbar(context, message, Colors.green.shade800, Icons.check_circle);
   }
 
+  /// Displays a red error snackbar with an error icon.
   static void showError(BuildContext context, String message) {
     _showSnackbar(context, message, Colors.red.shade800, Icons.error);
   }
 
+  /// Displays a blue info snackbar with an info icon.
   static void showInfo(BuildContext context, String message) {
     _showSnackbar(context, message, Colors.blue.shade800, Icons.info);
   }
 
+  /// Internal helper method to build and show the customized [SnackBar].
   static void _showSnackbar(BuildContext context, String message, Color color, IconData icon) {
+    // Hide any currently displaying snackbar to prevent queuing delays.
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    
+    // Show the new snackbar.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

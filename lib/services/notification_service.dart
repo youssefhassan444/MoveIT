@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Service responsible for managing push notifications via Firebase Cloud Messaging (FCM).
+/// 
+/// Handles permission requests, token generation/refresh, and local notification display.
 class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -11,8 +14,10 @@ class NotificationService {
 
   /// Initialize FCM: request permission, get token, save to Firestore,
   /// set up foreground listener.
+  /// 
+  /// [uid] is the current user's Firebase Auth UID.
   Future<void> init(String uid) async {
-    // Request permission
+    // Request permission from the user to display notifications
     await _messaging.requestPermission(
       alert: true,
       badge: true,
@@ -35,16 +40,17 @@ class NotificationService {
       },
     );
 
-    // Get and save FCM token
+    // Get the initial FCM token for the device
     final token = await _messaging.getToken();
     if (token != null) {
+      // Save the token to the user's Firestore document
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .update({'fcmToken': token});
     }
 
-    // Listen for token refresh
+    // Listen for token refreshes and update Firestore accordingly
     _messaging.onTokenRefresh.listen((newToken) {
       FirebaseFirestore.instance
           .collection('users')
@@ -52,10 +58,11 @@ class NotificationService {
           .update({'fcmToken': newToken});
     });
 
-    // Handle foreground messages
+    // Handle messages received while the app is in the foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
       if (notification != null) {
+        // Show a local notification since FCM does not display alerts in the foreground
         _localNotifications.show(
           id: notification.hashCode,
           title: notification.title,
@@ -76,5 +83,6 @@ class NotificationService {
   }
 }
 
+/// Provider for the [NotificationService] instance.
 final notificationServiceProvider =
     Provider<NotificationService>((ref) => NotificationService());

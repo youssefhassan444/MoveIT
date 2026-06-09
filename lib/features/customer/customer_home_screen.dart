@@ -1,21 +1,50 @@
+// ignore_for_file: unawaited_futures
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/location_address_banner.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 // ✅ أسماء الملفات الصحيحة عندك
 import 'cardscreen.dart';
 import 'walletscreen.dart';
+import '../../services/location_service.dart';
 
-class CustomerHomeScreen extends StatefulWidget {
+/// The main home screen for a customer.
+///
+/// It displays the current location, options for selecting a vehicle type,
+/// the user's wallet balance, and a logistics banner for quick bookings.
+class CustomerHomeScreen extends ConsumerStatefulWidget {
+  /// Creates a [CustomerHomeScreen].
   const CustomerHomeScreen({super.key});
 
   @override
-  State<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
+  ConsumerState<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
 }
 
-class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
+/// The state for [CustomerHomeScreen], handling location requests and UI state.
+class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
+  // Controls the expansion state of the vehicle selection list.
   bool isExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Request location permissions and fetch the address right after the first frame renders.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationJIT();
+    });
+  }
+
+  /// Just-In-Time (JIT) location request.
+  ///
+  /// Requests location permission from the user and fetches their current address.
+  Future<void> _requestLocationJIT() async {
+    final locService = ref.read(locationServiceProvider);
+    await locService.requestPermission();
+    fetchAndResolveCurrentAddress(ref);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,27 +128,32 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           _buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/nos.jpeg',
-                            label: 'TruckSend',
+                            label: 'Truck',
+                            vehicleTypeId: 'truck',
                           ),
                           _buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/suz.jpeg',
-                            label: 'GoFast',
+                            label: 'Mini-Truck',
+                            vehicleTypeId: 'mini_truck',
                           ),
                           _buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/big.jpeg',
-                            label: 'FrozenGo',
+                            label: 'Refrigerated Truck',
+                            vehicleTypeId: 'refrigerated_truck',
                           ),
                           _buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/heavy.jpeg',
-                            label: 'HeavyLoad',
+                            label: 'Heavy Truck',
+                            vehicleTypeId: 'heavy_truck',
                           ),
                           _buildVehicleBox(
                             context: context,
                             image: 'assets/moveit_master/easy.jpeg',
-                            label: 'EasyGo',
+                            label: 'Motorcycle',
+                            vehicleTypeId: 'motorcycle',
                           ),
                         ],
                       ),
@@ -329,13 +363,18 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   }
 
   // ================= VEHICLE BOX =================
+  /// Builds a clickable container representing a vehicle type.
+  ///
+  /// It navigates to the post-job screen passing the [vehicleTypeId] when tapped.
   Widget _buildVehicleBox({
     required BuildContext context,
     required String image,
     required String label,
+    required String vehicleTypeId,
   }) {
     return InkWell(
-      onTap: () => context.push('/customer/post-job'),
+      // Navigate to post-job and pass the selected vehicle type.
+      onTap: () => context.push('/customer/post-job', extra: vehicleTypeId),
       child: Container(
         height: 80,
         margin: const EdgeInsets.symmetric(vertical: 6),
@@ -367,12 +406,16 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   }
 
   // ================= WALLET ACTION =================
+  /// Builds an actionable button for the wallet section.
+  ///
+  /// The [icon] and [label] are displayed, and [onTap] is called when pressed.
   Widget _walletAction({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
+      // Execute the provided callback when the action is tapped.
       onTap: onTap,
       child: Column(
         children: [

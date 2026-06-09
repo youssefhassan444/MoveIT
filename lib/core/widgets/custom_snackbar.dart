@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
+/// A customized, branded snackbar component.
+/// Provides a sleek, floating notification with left-border color accents.
 class CustomSnackBar {
+  /// Shows a customized floating snackbar of the given [type].
   static void show(
     BuildContext context, {
     required String message,
     required SnackBarType type,
   }) {
+    // Determine dynamic properties based on the snackbar type.
     final color = _getColor(type);
     final icon = _getIcon(type);
 
+    // Display the newly constructed custom snackbar.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -43,6 +48,7 @@ class CustomSnackBar {
     );
   }
 
+  /// Helper to get the associated brand color for a given [SnackBarType].
   static Color _getColor(SnackBarType type) {
     switch (type) {
       case SnackBarType.success:
@@ -54,6 +60,7 @@ class CustomSnackBar {
     }
   }
 
+  /// Helper to get the appropriate icon for a given [SnackBarType].
   static IconData _getIcon(SnackBarType type) {
     switch (type) {
       case SnackBarType.success:
@@ -66,4 +73,5 @@ class CustomSnackBar {
   }
 }
 
+/// Defines the visual and semantic type of a custom snackbar.
 enum SnackBarType { success, error, info }

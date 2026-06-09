@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+/// The shell widget for the customer section of the app.
+///
+/// It wraps child routes with a persistent bottom navigation bar and an app bar.
 class CustomerShell extends ConsumerWidget {
+  /// The child widget (route) to display within the shell.
   final Widget child;
 
+  /// Creates a [CustomerShell].
   const CustomerShell({
     super.key,
     required this.child,
@@ -12,15 +17,19 @@ class CustomerShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Get the current location path to determine the active tab and title.
     final location = GoRouterState.of(context).uri.path;
 
+    /// Determines the index for the bottom navigation bar based on the current route.
     int getCurrentIndex() {
       if (location.startsWith('/customer/jobs')) return 1;
       if (location.startsWith('/customer/history')) return 2;
       if (location.startsWith('/customer/profile')) return 3;
+      // Default to home index.
       return 0;
     }
 
+    /// Determines the title to display in the app bar based on the current route.
     String getTitle() {
       if (location.startsWith('/customer/jobs')) {
         return 'My Deliveries';
@@ -30,6 +39,7 @@ class CustomerShell extends ConsumerWidget {
         return 'Trip History';
       }
 
+      // Profile and home screens do not show a standard title.
       if (location.startsWith('/customer/profile')) {
         return '';
       }
@@ -126,6 +136,7 @@ class CustomerShell extends ConsumerWidget {
             fontSize: 11,
           ),
 
+          // Navigate to the corresponding route when a tab is tapped.
           onTap: (index) {
             switch (index) {
               case 0:

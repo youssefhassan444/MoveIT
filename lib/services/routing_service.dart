@@ -150,19 +150,19 @@ int calculateJobPrice(double distanceMeters, String vehicleType) {
   // Base rates in EGP
   final baseRates = {
     'motorcycle': 20.0,
-    'sedan': 40.0,
-    'pickup': 60.0,
-    'van': 80.0,
-    'truck': 120.0,
+    'mini_truck': 40.0,
+    'truck': 60.0,
+    'heavy_truck': 100.0,
+    'refrigerated_truck': 120.0,
   };
 
   // Per km rates in EGP
   final perKmRates = {
     'motorcycle': 5.0,
-    'sedan': 10.0,
-    'pickup': 15.0,
-    'van': 20.0,
-    'truck': 30.0,
+    'mini_truck': 10.0,
+    'truck': 15.0,
+    'heavy_truck': 25.0,
+    'refrigerated_truck': 30.0,
   };
 
   final base = baseRates[vehicleType] ?? 40.0;

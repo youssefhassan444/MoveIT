@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+/// A dialog requesting permission to access the device's location.
+/// Shown when the user needs to opt-in to location tracking or sharing.
 class LocationPermissionDialog extends StatelessWidget {
+  /// Callback triggered when the user agrees.
   final VoidCallback onYes;
+  /// Callback triggered when the user declines.
   final VoidCallback onNo;
 
   const LocationPermissionDialog({
